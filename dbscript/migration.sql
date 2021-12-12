@@ -1,5 +1,3 @@
-drop table sisetu_main;
-
 CREATE TABLE sisetu_main (
     nendo     integer not null,
     bunrui    character varying(40),
@@ -36,5 +34,35 @@ ALTER TABLE ONLY sisetu_main
         sheet_nm,
         col_index
     );
+
+
+create or replace view V_TDFK as 
+select
+    substring(daitai_cd,1,2) tdfk_cd,
+    tdfk_nm
+from
+    sisetu_main
+group by
+    substring(daitai_cd,1,2),
+    tdfk_nm
+order by
+    tdfk_cd
+;
+
+
+ 
+create or replace view V_CITY as 
+select
+    daitai_cd dantai_cd,
+    city_nm
+from
+    sisetu_main
+group by
+    dantai_cd,
+    tdfk_nm
+order by
+    dantai_cd
+;
+
 
  

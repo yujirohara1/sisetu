@@ -1,17 +1,23 @@
 {% extends 'common.html' %}
  
-{% block title %}公共施設状況調経年比較表 分析評価サービス{% endblock %}
+{% block title %}公共施設状況調経年比較表{% endblock %}
 
 {% block content %}
 
 %div.container-fluid
   %div.row
-    %div.col-6
-      %h1.display-6
-        公共施設状況調経年比較表 分析評価サービス
+    %div.col-4
+      %h2.display-6
+        公共施設状況調経年比較表
+    %div.col-2
+      %select#selTdfk.form-select.form-select-sm(aria-label=".form-select-sm example"  style="margin-top:10px")
+        %option(selected)
+          （都道府県選択）
     %div.col-6
       %button.btn.btn-primary.btn-sm.float-end(type="button" data-bs-toggle="modal" data-bs-target="#modalExcelUpload" style="margin-top:10px")
         データ取り込み
+        
+
 
 
 
