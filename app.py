@@ -17,16 +17,7 @@ from reportlab.platypus import Table, TableStyle
 from reportlab.lib.units import mm
 from reportlab.lib import colors
 from api.database import db, ma
-from models.item import Item, ItemSchema, VItemGroup, VItemGroupSchema
-from models.customer import Customer, CustomerSchema, CustomerNentuki, CustomerNentukiSchema
-from models.mstsetting import MstSetting, MstSettingSchema
-from models.sisetumain import SisetuMain, SisetuMainSchema
-from models.daicho import Daicho, DaichoSchema, VDaichoA, VDaichoASchema
-from models.seikyu import Seikyu, SeikyuSchema, VSeikyuA, VSeikyuASchema, VSeikyuB, VSeikyuBSchema, VSeikyuC, VSeikyuCSchema
-# from models.toko import Toko, TokoSchema, 
-# from models.tokoradar import TokoRadar, TokoRadarSchema, VTokoRadarGroupByVendor, VTokoRadarGroupByVendorSchema
-# from models.bunya import Bunya, BunyaSchema
-from models.kaito import Kaito, KaitoSchema, VTokoGroupbyVendor, VTokoGroupbyVendorSchema, VTokoGroupbySystem, VTokoGroupbySystemSchema, VTokoRadarGroupByVendor, VTokoRadarGroupByVendorSchema, VBunyaMapGroupbyVendor, VBunyaMapGroupbyVendorSchema, VTodohukenGroupbyVendor, VTodohukenGroupbyVendorSchema
+from models.sisetumain import SisetuMain, SisetuMainSchema, VCity, VCitySchema
 from sqlalchemy.sql import text
 from sqlalchemy import distinct
 from sqlalchemy import desc
@@ -395,79 +386,6 @@ def resPdf_printSeikyu(customerid, customeridB, nentuki, randnum):
     return "-1"
 
 
-@app.route('/pdfMergeSeikyusho',methods=["GET", "POST"])
-@login_required
-def print_pdfMergeSeikyusho():
-  timestamp = datetime.datetime.now()
-  timestampStr = timestamp.strftime('%Y%m%d%H%M%S%f')
-  vals = request.json["data"]
-  merger = PyPDF2.PdfFileMerger()
-
-  # for id_list in vals:
-  #   try:
-  #     merger.append("tmp/" + id_list + "")
-  #   except:
-  #     errorfile = id_list
-  #     import traceback
-  #     traceback.print_exc()
-
-  idx = 0
-  tryCnt = 0
-  while True :
-    try:
-      # merger.append("tmp/" + vals.pop(idx) + "")
-      # idx = idx + 1
-      merger.append("tmp/" + vals[0] + "")
-      print("成功：" + vals.pop(0))
-    except:
-      print("失敗：" + vals[0])
-      # import traceback
-      # traceback.print_exc()
-    finally:
-      tryCnt = tryCnt + 1
-
-    if len(vals)==0 :
-      break
-    if tryCnt > 9999 :
-      break
-
-  merger.write("tmp/" + timestampStr + ".pdf")
-  merger.close()
-  
-  return send_file("tmp/" + timestampStr + ".pdf", as_attachment=True)
-
-        
-
-
-# # def makeWrapper(data_list):
-# def makeWrapper():
-
-#   timestamp = datetime.datetime.now()
-#   timestampStr = timestamp.strftime('%Y%m%d%H%M%S%f')
-
-
-#   # make("file" + timestampStr, data_list)
-#   # with app.app_context():
-#   make("file" + timestampStr)
-
-#   response = make_response()
-#   response.data = open("tmp/" + "file" + timestampStr + ".pdf", "rb").read()
-#   response.headers['Content-Disposition'] = "attachment; filename=unicode.pdf"
-#   response.mimetype = 'application/pdf'
-#   # return response
-#   return send_file("tmp/" + "file" + timestampStr + ".pdf", as_attachment=True)
-
-
-
-@app.route('/getMstSetting_Full')
-@login_required
-def resJson_getMstSetting_Full():
-  setting = MstSetting.query.distinct(MstSetting.param_id, MstSetting.param_nm).filter(MstSetting.tenant_id==current_user.tenant_id).all()
-  setting_schema = MstSettingSchema(many=True)
-  return jsonify({'data': setting_schema.dumps(setting, ensure_ascii=False)})
-
-
-
 @app.route('/binaryTest',methods=["PUT"])
 def binaryTest():
   timestamp = datetime.datetime.now()
@@ -497,14 +415,12 @@ def binaryTest():
 
           columnId = 0
           for cell in row:
-            # if columnId==0:
-            #   continue
             
             try:
               sisetuMain = SisetuMain()
               sisetuMain.nendo = int(row[1])
               sisetuMain.bunrui = row[2]
-              sisetuMain.daitai_cd = row[3]
+              sisetuMain.dantai_cd = row[3]
               sisetuMain.tdfk_nm = row[4]
               sisetuMain.city_nm = row[5]
               sisetuMain.sheet_nm = sh
@@ -550,69 +466,6 @@ def isfloat(strval):
   except ValueError:
     return False
 
-
-@app.route('/updateSetteiText/<params>')
-@login_required
-def dbUpdate_updateSetteiText(params):
-  vals = params.split(",")
-  # param_id, param_nm, param_no, param_val1, param_val2, colIndex, val
-  MstSetting.query.filter( \
-    MstSetting.param_id==vals[0], \
-    MstSetting.param_no==vals[2], \
-    MstSetting.tenant_id==current_user.tenant_id).delete()
-
-  mstsetting = MstSetting()
-  mstsetting.param_id = vals[0]
-  mstsetting.param_nm = vals[1]
-  mstsetting.param_no = vals[2]
-  mstsetting.param_val1 = null2blank(vals[6]) if int(vals[5])==1 else null2blank(vals[3])  #param_val1 #"OK" if n == 10 else "NG"
-  mstsetting.param_val2 = null2blank(vals[6]) if int(vals[5])==2 else null2blank(vals[4])  #param_val2
-  mstsetting.param_val3 = ""
-  mstsetting.tenant_id = current_user.tenant_id
-  db.session.add(mstsetting)
-
-  # データを確定
-  db.session.commit()
-  return "1"
-
-
-
-
-@app.route('/updateKakute/<nen>/<tuki>/<customerid>')
-@login_required
-def dbUpdate_updateKakute(nen, tuki, customerid):
-  kakute = Kakute.query.filter( \
-    Kakute.nen == nen, \
-    Kakute.tuki == tuki, \
-    Kakute.customer_id == customerid, \
-    Kakute.tenant_id==current_user.tenant_id).all()
-  
-  delOnly=False
-  if len(kakute)==1:
-    if kakute[0].kakute_ymdt != None:
-      delOnly=True
-
-  Kakute.query.filter( \
-    Kakute.nen == nen, \
-    Kakute.tuki == tuki, \
-    Kakute.customer_id == customerid, \
-    Kakute.tenant_id==current_user.tenant_id).delete()
-  
-  if delOnly==False:
-    kakute = Kakute()
-    kakute.nen = nen
-    kakute.tuki = tuki
-    kakute.customer_id = customerid
-    kakute.tenant_id = current_user.tenant_id
-    kakute.kakute_ymdt = datetime.datetime.now()
-    db.session.add(kakute)
-# 
-  # # データを確定
-  db.session.commit()
-  return customerid
-
-
-
 def null2blank(val):
   if val == "null":
     return ""
@@ -620,111 +473,12 @@ def null2blank(val):
     return val
 
 
-@app.route('/getDaichoCustomer_SeikyuSub')
-@login_required
-def resJson_getDaichoCustomer_SeikyuSub():
-  customer = Customer.query.filter(Customer.list!=None, Customer.tenant_id==current_user.tenant_id).all()
-  customer_schema = CustomerSchema(many=True)
-  return jsonify({'data': customer_schema.dumps(customer, ensure_ascii=False)})
+@app.route('/getCityListByTdfkCd/<tdfkCd>')
+def getCityListByTdfkCd(tdfkCd):
+    vcitylist = VCity.query.filter(VCity.tdfk_cd==tdfkCd).order_by(asc(VCity.dantai_cd)).all()
+    vcitylist_schema = VCitySchema(many=True)
+    return jsonify({'data': vcitylist_schema.dumps(vcitylist, ensure_ascii=False)})
 
-@app.route('/updAddDaicho/<param>')
-@login_required
-def dbUpdate_updAddDaicho(param):
-  vals = param.split(",")
-  # print(vals)
-  Daicho.query.filter(Daicho.quantity==0, Daicho.tenant_id==current_user.tenant_id).delete()
-  for youbi in range(2, 9):
-    Daicho.query.filter(Daicho.customer_id==vals[0], Daicho.item_id==vals[1], Daicho.youbi==(youbi-1), Daicho.tenant_id==current_user.tenant_id).delete()
-    if vals[youbi].isdecimal():
-      if int(vals[youbi]) != 0 :
-        daicho = Daicho()
-        daicho.customer_id = vals[0]
-        daicho.item_id = vals[1]
-        daicho.youbi = (youbi-1)
-        daicho.quantity = vals[youbi]
-        daicho.tenant_id = current_user.tenant_id
-        db.session.add(daicho)
-    db.session.commit()
-  return param
-
-@app.route('/updTakuhaijun',methods=["GET", "POST"])
-@login_required
-def dbUpdate_updTakuhaijun():
-  vals = request.json["data"]
-  for id_list in vals:
-    customer = Customer.query.filter(Customer.id==id_list[0], Customer.tenant_id==current_user.tenant_id).first()
-    customer.list = id_list[1]
-    if str(id_list[1]) == "None":
-      customer.address3 = None
-    else:
-      customer.address3 = str(id_list[1])
-  db.session.commit()
-  return "1"
-
-
-@app.route('/updateSeikyuQuantity/<customerid>/<itemid>/<deliverymd>/<quantity>/<price>/<pricesub>')
-@login_required
-def dbUpdate_updSeikyuQuantity(customerid, itemid, deliverymd, quantity, price, pricesub):
-  
-  Seikyu.query.filter(Seikyu.customer_id==customerid, Seikyu.item_id==itemid, Seikyu.deliver_ymd==deliverymd, Seikyu.tenant_id==current_user.tenant_id).delete()
-  
-  tstr = deliverymd #'2012-12-29 13:49:37'
-  tdatetime = datetime.datetime.strptime(tstr, '%Y-%m-%d')
-  tdate = datetime.date(tdatetime.year, tdatetime.month, tdatetime.day)
-
-  d = Daicho.query.filter(Daicho.customer_id==customerid, Daicho.item_id==itemid, Daicho.youbi==str(tdate.weekday()+1), Seikyu.tenant_id==current_user.tenant_id).all()
-  
-  if int(quantity) != 0  or len(d) != 0:
-    seikyu = Seikyu()
-    seikyu.customer_id = customerid
-    seikyu.item_id = itemid
-    seikyu.deliver_ymd = deliverymd
-    seikyu.price = price
-    seikyu.price_sub = price if price == "null" else None
-    seikyu.quantity = int(quantity)
-    seikyu.user_id = current_user.name
-    seikyu.ymdt = datetime.datetime.now()
-    seikyu.tenant_id = current_user.tenant_id
-    db.session.add(seikyu)
-
-  # データを確定
-  db.session.commit()
-  return "1"
-
-
-
-
-
-@app.route('/UpdateItem/<param>')
-@login_required
-def dbUpdate_UpdateItem(param):
-  vals = param.split(DELIMIT)
-  itemid = int(vals[0])
-  if itemid == 0 :  #新規登録
-    item = Item()
-    item.code = vals[1]
-    item.name1 = vals[2]
-    item.name2 = vals[3]
-    item.tanka = int(vals[4])
-    item.orosine = vals[5]
-    item.zei_kb = int(vals[6])
-    item.del_flg = int(vals[7])
-    item.tenant_id = current_user.tenant_id
-    db.session.add(item)
-  else:
-    item = Item.query.filter(Item.id==itemid, Item.tenant_id==current_user.tenant_id).first()
-    item.code = vals[1]
-    item.name1 = vals[2]
-    item.name2 = vals[3]
-    item.tanka = int(vals[4])
-    item.orosine = vals[5]
-    item.zei_kb = int(vals[6])
-    item.del_flg = int(vals[7])
-    item.tenant_id = current_user.tenant_id
-
-  # データを確定
-  db.session.commit()
-  return param
 
 
 
@@ -782,38 +536,6 @@ def export_list_csv(export_list, csv_dir):
     writer.writerows(export_list)
 
 
-
-
-@app.route('/getVendorNmList')
-def resJson_getVendorNmList():
-    tokolist = VTokoGroupbyVendor.query.all()
-    tokolist_schema = VTokoGroupbyVendorSchema(many=True)
-    return jsonify({'data': tokolist_schema.dumps(tokolist, ensure_ascii=False)})
-
-@app.route('/getSystemNmList')
-def resJson_getSystemNmList():
-    tokolist = VTokoGroupbySystem.query.all()
-    tokolist_schema = VTokoGroupbySystemSchema(many=True)
-    return jsonify({'data': tokolist_schema.dumps(tokolist, ensure_ascii=False)})
-
-@app.route('/getTokoList')
-def resJson_getTokoList():
-    tokolist = VTokoGroupbyVendor.query.all()
-    tokolist_schema = VTokoGroupbyVendorSchema(many=True)
-    return jsonify({'data': tokolist_schema.dumps(tokolist, ensure_ascii=False)})
-
-@app.route('/getKoeList/<vendornm>')
-def resJson_getKoeList(vendornm):
-    koelist = Kaito.query.filter(Kaito.hyoka_comment!=None, Kaito.vendor_nm==vendornm).all()
-    koelist_schema = KaitoSchema(many=True)
-    return jsonify({'data': koelist_schema.dumps(koelist, ensure_ascii=False)})
-
-
-@app.route('/getNanajikuAverage/<vendornm>')
-def resJson_getNanajikuAverage(vendornm):
-    nanaave = VTokoRadarGroupByVendor.query.filter(VTokoRadarGroupByVendor.vendor_nm==vendornm).all()
-    nanaave_schema = VTokoRadarGroupByVendorSchema(many=True)
-    return jsonify({'data': nanaave_schema.dumps(nanaave, ensure_ascii=False)})
 
 
 @app.route('/getBunyaMap/<vendornm>')

@@ -5,7 +5,7 @@ class SisetuMain(db.Model):
     __tablename__ = "sisetu_main"
     nendo      = db.Column(db.Integer, primary_key=True) 
     bunrui     = db.Column(db.String(), primary_key=False) 
-    daitai_cd  = db.Column(db.String(), primary_key=True) 
+    dantai_cd  = db.Column(db.String(), primary_key=True) 
     tdfk_nm    = db.Column(db.String(), primary_key=False) 
     city_nm    = db.Column(db.String(), primary_key=False) 
     sheet_nm   = db.Column(db.String(), primary_key=True)
@@ -34,16 +34,16 @@ class SisetuMainSchema(ma.SQLAlchemyAutoSchema):
             model = SisetuMain
             load_instance = True
 
-# class VTokoGroupbyVendor(db.Model): 
-#     __tablename__ = "v_toko_groupby_vendor"
-#     vendor_nm = db.Column(db.String(), primary_key=True) 
-#     kensu = db.Column(db.Integer, primary_key=True) 
-#     rank1_avg = db.Column(db.Float , primary_key=True) 
+class VCity(db.Model): 
+    __tablename__ = "v_city"
+    tdfk_cd = db.Column(db.String(), primary_key=True) 
+    dantai_cd = db.Column(db.String(), primary_key=True) 
+    city_nm = db.Column(db.String(), primary_key=False) 
 
-# class VTokoGroupbyVendorSchema(ma.SQLAlchemyAutoSchema):
-#       class Meta:
-#             model = VTokoGroupbyVendor
-#             load_instance = True
+class VCitySchema(ma.SQLAlchemyAutoSchema):
+      class Meta:
+            model = VCity
+            load_instance = True
 
 # class VTokoGroupbySystem(db.Model): 
 #     __tablename__ = "v_toko_groupby_system"

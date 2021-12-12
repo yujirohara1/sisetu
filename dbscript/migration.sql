@@ -1,7 +1,7 @@
 CREATE TABLE sisetu_main (
     nendo     integer not null,
     bunrui    character varying(40),
-    daitai_cd character varying(6)  not null,
+    dantai_cd character varying(6)  not null,
     tdfk_nm   character varying(40) not null,
     city_nm   character varying(40) not null,
     sheet_nm  character varying(40) not null,
@@ -30,7 +30,7 @@ CREATE TABLE sisetu_main (
 ALTER TABLE ONLY sisetu_main
     ADD CONSTRAINT sisetu_main_pkey PRIMARY KEY (
         nendo, 
-        daitai_cd,
+        dantai_cd,
         sheet_nm,
         col_index
     );
@@ -38,28 +38,31 @@ ALTER TABLE ONLY sisetu_main
 
 create or replace view V_TDFK as 
 select
-    substring(daitai_cd,1,2) tdfk_cd,
+    substring(dantai_cd,1,2) tdfk_cd,
     tdfk_nm
 from
     sisetu_main
 group by
-    substring(daitai_cd,1,2),
+    substring(dantai_cd,1,2),
     tdfk_nm
 order by
     tdfk_cd
 ;
 
 
- 
+
+drop view V_CITY;
 create or replace view V_CITY as 
 select
-    daitai_cd dantai_cd,
+    substring(dantai_cd,1,2) tdfk_cd,
+    dantai_cd ,
     city_nm
 from
     sisetu_main
 group by
+    substring(dantai_cd,1,2),
     dantai_cd,
-    tdfk_nm
+    city_nm
 order by
     dantai_cd
 ;

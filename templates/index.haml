@@ -11,9 +11,13 @@
         公共施設状況調経年比較表
     %div.col-2
       %select#selTdfk.form-select.form-select-sm(aria-label=".form-select-sm example"  style="margin-top:10px")
-        %option(selected)
+        %option(selected value="0")
           （都道府県選択）
-    %div.col-6
+    %div.col-2
+      %select#selCity.form-select.form-select-sm(aria-label=".form-select-sm example"  style="margin-top:10px")
+        %option(selected value="0")
+          （市区町村選択）
+    %div.col-4
       %button.btn.btn-primary.btn-sm.float-end(type="button" data-bs-toggle="modal" data-bs-target="#modalExcelUpload" style="margin-top:10px")
         データ取り込み
         
@@ -40,7 +44,20 @@
           キャンセル
         %button.btn.btn-primary#btnFileImport(type="button")
           実行
+
+
+
+%div#loading
+  %div.spinner-border(role="status" style="position:relative; left:50%; top:50%; width: 6rem; height: 6rem;")
+
+<div id="loader-bg" class="is-hide">
+    <div id="loader" class="is-hide">
+        <p>
+            <img src="../static/image/loading.gif">
+        </p>
+    </div>
 </div>
+
 {% endblock %}
 
 {% block scripts %}
