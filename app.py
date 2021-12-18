@@ -480,6 +480,17 @@ def getCityListByTdfkCd(tdfkCd):
     return jsonify({'data': vcitylist_schema.dumps(vcitylist, ensure_ascii=False)})
 
 
+@app.route('/getFullRecordByDantaiCd/<cityCd>')
+def getFullRecordByDantaiCd(cityCd):
+    nendos = [2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019]
+    datalist = SisetuMain.query.filter(SisetuMain.col_index >= 6, 
+    SisetuMain.dantai_cd==cityCd, SisetuMain.nendo.in_(nendos)).order_by(asc(SisetuMain.sheet_nm), 
+    asc(SisetuMain.col_index), 
+    asc(SisetuMain.nendo)).all()
+    datalist_schema = SisetuMainSchema(many=True)
+    return jsonify({'data': datalist_schema.dumps(datalist, ensure_ascii=False)})
+
+
 
 
 @app.route('/getCsvData/<viewnm>/<nentuki>/<groupkb>/<tanto>')

@@ -53,19 +53,31 @@ order by
 
 drop view V_CITY;
 create or replace view V_CITY as 
+with nendo as (
+    select
+        max(nendo) nendo
+    from
+        sisetu_main
+)
 select
-    substring(dantai_cd,1,2) tdfk_cd,
-    dantai_cd ,
-    city_nm
+    substring(a.dantai_cd,1,2) tdfk_cd,
+    a.dantai_cd ,
+    a.city_nm
 from
-    sisetu_main
+    sisetu_main a,
+    nendo b
+where
+    a.col_index = 0 and
+    a.nendo = b.nendo
 group by
-    substring(dantai_cd,1,2),
-    dantai_cd,
-    city_nm
+    substring(a.dantai_cd,1,2),
+    a.dantai_cd,
+    a.city_nm
 order by
-    dantai_cd
+    a.dantai_cd
 ;
 
 
- 
+select * from v_city;
+
+

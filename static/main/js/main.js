@@ -79,6 +79,121 @@ document.getElementById("selTdfk").addEventListener("change", function(){
 });
 
 
+document.getElementById("selCity").addEventListener("change", function(){
+  val = document.getElementById("selCity").value;
+  fetch('/getFullRecordByDantaiCd/' + val, {
+    method: 'GET',
+    'Content-Type': 'application/json'
+  })
+  .then(res => res.json())
+  .then(jsonData => {
+    list = JSON.parse(jsonData.data);
+    createTable(list);
+    UndispLoading();
+    return;
+    //document.querySelector('#lblFileProperty').innerHTML = "取り込み完了！"; //jsonData.data;
+    //document.getElementById('btnFileImport').classList.remove("disabled");
+  })
+  .catch(error => { console.log(error); });
+  dispLoading();
+});
+
+function createTable(datalist){
+  var tableDiv = document.getElementById("mainTableDiv");
+  while(tableDiv.lastChild){
+    tableDiv.removeChild(tableDiv.lastChild);
+  }
+
+  let table = document.createElement("table");
+  let thead = document.createElement('thead');
+  let tbody = document.createElement('tbody');
+
+  let trow = document.createElement('tr');
+  let head_1 = document.createElement('th');
+  head_1.innerHTML = "aaaaa";
+  let head_2 = document.createElement('th');
+  head_2.innerHTML = "bbbb";
+  let head_3 = document.createElement('th');
+  head_3.innerHTML = "ccc";
+  trow.appendChild(head_1);
+  trow.appendChild(head_2);
+  trow.appendChild(head_3);
+  thead.appendChild(trow);
+
+  var lastIndex = -1;
+  var blAddRow = false;
+  trow = document.createElement('tr');
+  let tdataVal = document.createElement('td');
+  for(let i in datalist){
+
+    if(lastIndex != datalist[i].col_index){ //新しく行が始まったときにインデックスと見出し作成
+      let tdataA = document.createElement('td');
+      tdataA.innerHTML = datalist[i].col_index;
+      trow.appendChild(tdataA);
+  
+      let tdataB = document.createElement('td');
+      tdataB.innerHTML = datalist[i].col_key1;
+      trow.appendChild(tdataB);
+  
+      let tdataC = document.createElement('td');
+      tdataC.innerHTML = datalist[i].col_key2;
+      trow.appendChild(tdataC);
+  
+      let tdataD = document.createElement('td');
+      tdataD.innerHTML = datalist[i].col_key3;
+      trow.appendChild(tdataD);
+  
+      let tdataE = document.createElement('td');
+      tdataE.innerHTML = datalist[i].col_key4;
+      trow.appendChild(tdataE);
+  
+      let tdataF = document.createElement('td');
+      tdataF.innerHTML = datalist[i].col_key5;
+      trow.appendChild(tdataF);
+      
+      let tdataG = document.createElement('td');
+      tdataG.innerHTML = datalist[i].col_key6;
+      trow.appendChild(tdataG);
+      
+      let tdataH = document.createElement('td');
+      tdataH.innerHTML = datalist[i].col_key7;
+      trow.appendChild(tdataH);
+    }
+
+    let tdataVal = document.createElement('td');
+    tdataVal.innerHTML = datalist[i].val_num;
+    trow.appendChild(tdataVal);
+    
+    if(IsSameTR_NextRow(datalist, i)){
+      ; //継続
+    } else {
+      tbody.appendChild(trow);
+      trow = document.createElement('tr');
+    }
+    lastIndex = datalist[i].col_index;
+
+  }
+  table.appendChild(thead);
+  table.appendChild(tbody);
+  table.classList.add("table");
+  table.classList.add("table-bordered");
+  table.id = "mainTable";
+  document.getElementById('mainTableDiv').appendChild(table);
+  //table = new DataTable(mainTable);
+}
+
+function IsSameTR_NextRow(datalist, i){
+  try{
+    if (datalist[i].col_index == datalist[Number(i)+1].col_index){
+      return true;
+    }
+  }catch(e){
+
+  }
+  return false;
+}
+
+//var table = new DataTable("table");
 
 function createCitySelectOption(datalist){
   var select = document.getElementById("selCity");
@@ -96,44 +211,6 @@ function createCitySelectOption(datalist){
     select.appendChild(option);
   }
 }
-
-// function dispLoading(){
-//   document.querySelector('.container-fluid').style.display = "block";
-//   //document.querySelector('#loading').
-//   //document.querySelector('#spinner').
-//   //$('#wrap').css('display', 'block');
-//   //$('#loading').delay(500).fadeOut(500);
-//   //$('#spinner').delay(300).fadeOut(300);
-// }
-
-// function hideLoading(){
-//   document.querySelector('.container-fluid').style.display = "block";
-//   //$('#wrap').css('display','block');
-//   //$('#loading').delay(500).fadeOut(500);
-//   //$('#spinner').delay(300).fadeOut(300);
-// }
-
-// $(function() {
-//   var h = $(window).height();
-
-//   $('#wrap').css('display','none');
-//   $('#loading ,#spinner').height(h).css('display','block');
-// });
-
-// function dispLoading(){
-//   document.querySelector('.container-fluid').style.display = "block";
-//   //$('#loading').delay(500).fadeOut(500);
-//   //$('#spinner').delay(300).fadeOut(300);
-// }
-
-// setTimeout('stopload()',5000);
-
-// function stopload(){
-//   document.querySelector('.container-fluid').style.display = "block";
-//   // $('#loading').delay(500).fadeOut(500);
-//   // $('#spinner').delay(300).fadeOut(300);
-// }
-
 
 
 // 都道府県プルダウンの作成
@@ -175,71 +252,30 @@ const c_tdfk = {
 
 
 function dispLoading(){
-  //document.querySelector('.container-fluid').style.display = "none";
-  document.querySelector('#loading').style.display = "block";
-  //document.querySelector('#spinner').style.display = "block";
+  var bg = document.getElementById('loader-bg');
+  var loader = document.getElementById('loader');
+  bg.classList.remove('is-hide');
+  loader.classList.remove('is-hide');
+  bg.classList.remove('fadeout-bg');
+  loader.classList.remove('fadeout-loader');
 }
 
 
 
-
-function UndispLoading(){
-  document.querySelector('.container-fluid').style.display = "";
-  document.querySelector('#loading').style.display = "none";
-  document.querySelector('#loading').delay(500).fadeOut(500);
-  //document.querySelector('#spinner').style.display = "none";
-}
-
-
-
-
-
-
-
-
-
-
-
-  // //ローディングロゴエリアとウインドウの高さを取得
-  // let loadlogo = document.querySelector('.loading-logo'),
-  //     winH = window.innerHeight;
-
-  // //スマホでアドレスバーの分ロゴの位置がずれるので高さを調整
-  // loadlogo.style.height = winH + 'px';
-
-  // //ページ読み込み完了でローディング画面を非表示
-  // window.addEventListener('load', stopload);
-
-  // //10秒経過で強制的にローディング画面を非表示
-  // setTimeout('stopload()',10000);
-
-  // //ローディング画面を非表示にする処理
-  // function stopload() {
-  //   //ローディング画面とページを取得
-  //   let loader = document.querySelector('#loading'),
-  //       page = document.querySelector('#page');
-
-  //   //ローディング画面とページにクラスを追加
-  //   page.classList.add('is-loaded');
-  //   loader.classList.add('is-loaded');
-  // }
-
-
-
-  var bg = document.getElementById('loader-bg'),
-    loader = document.getElementById('loader');
-/* ロード画面の非表示を解除 */
-bg.classList.remove('is-hide');
-loader.classList.remove('is-hide');
+//dispLoading();
 
 /* 読み込み完了 */
-window.addEventListener('load', stopload);
+//window.addEventListener('load', UndispLoading);
 
 /* 10秒経ったら強制的にロード画面を非表示にする */
-setTimeout('stopload()',10000);
+//setTimeout('UndispLoading()',10000);
 
 /* ロード画面を非表示にする処理 */
-function stopload(){
+function UndispLoading(){
+  var bg = document.getElementById('loader-bg');
+  var loader = document.getElementById('loader');
     bg.classList.add('fadeout-bg');
     loader.classList.add('fadeout-loader');
+    bg.classList.add('is-hide');
+    loader.classList.add('is-hide');
 }
