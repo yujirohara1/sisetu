@@ -195,3 +195,16 @@ table.dataTable thead tr {
 #loader p img {
     display: inline-block;
 }
+
+
+/*　スクロールバーの実装 */
+.table_sticky {
+    display: block;
+    overflow-y: scroll;
+    height: calc(100vh/1.5);
+}
+.table_sticky thead th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}

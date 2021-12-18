@@ -129,30 +129,30 @@ function createTable(datalist){
     if(lastIndex != datalist[i].col_index){ //新しく行が始まったときにインデックスと見出し作成
       let tdataA = document.createElement('td');
       tdataA.innerHTML = datalist[i].col_index;
-      trow.appendChild(tdataA);
+      //trow.appendChild(tdataA);
   
       let tdataB = document.createElement('td');
-      tdataB.innerHTML = datalist[i].col_key1;
+      tdataB.innerHTML = formatCategory1(datalist[i].col_key1);
       trow.appendChild(tdataB);
   
       let tdataC = document.createElement('td');
-      tdataC.innerHTML = datalist[i].col_key2;
+      tdataC.innerHTML = formatCategory2(datalist[i].col_key2);
       trow.appendChild(tdataC);
   
       let tdataD = document.createElement('td');
-      tdataD.innerHTML = datalist[i].col_key3;
+      tdataD.innerHTML = formatCategory3(datalist[i].col_key3);
       trow.appendChild(tdataD);
   
       let tdataE = document.createElement('td');
-      tdataE.innerHTML = datalist[i].col_key4;
+      tdataE.innerHTML = formatCategory4(datalist[i].col_key4);
       trow.appendChild(tdataE);
   
       let tdataF = document.createElement('td');
-      tdataF.innerHTML = datalist[i].col_key5;
+      tdataF.innerHTML = formatCategory5(datalist[i].col_key5);
       trow.appendChild(tdataF);
       
       let tdataG = document.createElement('td');
-      tdataG.innerHTML = datalist[i].col_key6;
+      tdataG.innerHTML = formatCategory6(datalist[i].col_key6);
       trow.appendChild(tdataG);
       
       let tdataH = document.createElement('td');
@@ -160,8 +160,10 @@ function createTable(datalist){
       trow.appendChild(tdataH);
     }
 
+
     let tdataVal = document.createElement('td');
-    tdataVal.innerHTML = datalist[i].val_num;
+    tdataVal.innerHTML = formatCategoryValue(datalist[i].val_num);
+    tdataVal.classList.add("text-end"); //
     trow.appendChild(tdataVal);
     
     if(IsSameTR_NextRow(datalist, i)){
@@ -177,6 +179,8 @@ function createTable(datalist){
   table.appendChild(tbody);
   table.classList.add("table");
   table.classList.add("table-bordered");
+  table.classList.add("table_sticky");
+  table.classList.add("fs-7"); //text-end
   table.id = "mainTable";
   document.getElementById('mainTableDiv').appendChild(table);
   //table = new DataTable(mainTable);
@@ -279,3 +283,124 @@ function UndispLoading(){
     bg.classList.add('is-hide');
     loader.classList.add('is-hide');
 }
+
+
+
+
+
+
+
+
+
+function formatCategory1(str){
+  var ret = str;
+  var ind = ret.indexOf("(");
+  if(ind >= 0){
+    ret = ret.substring(0,ind);
+  }
+  ret = ret.replace("十六　","16 ");
+  ret = ret.replace("十五　","15 ");
+  ret = ret.replace("十四　","14 ");
+  ret = ret.replace("十三　","13 ");
+  ret = ret.replace("十二　","12 ");
+  ret = ret.replace("十一　","11 ");
+  ret = ret.replace("十　","10 ");
+  ret = ret.replace("九　","9 ");
+  ret = ret.replace("八　","8 ");
+  ret = ret.replace("七　","7 ");
+  ret = ret.replace("六　","6 ");
+  ret = ret.replace("五　","5 ");
+  ret = ret.replace("四　","4 ");
+  ret = ret.replace("三　","3 ");
+  ret = ret.replace("二　","2 ");
+  ret = ret.replace("一　","1 ");
+
+  return ret;
+}
+
+function formatCategory2(str){
+  var ret = str;
+  ret = ret.replace("十六　","16 ");
+  ret = ret.replace("十五　","15 ");
+  ret = ret.replace("十四　","14 ");
+  ret = ret.replace("十三　","13 ");
+  ret = ret.replace("十二　","12 ");
+  ret = ret.replace("十一　","11 ");
+  ret = ret.replace("十　","10 ");
+  ret = ret.replace("九　","9 ");
+  ret = ret.replace("八　","8 ");
+  ret = ret.replace("七　","7 ");
+  ret = ret.replace("六　","6 ");
+  ret = ret.replace("五　","5 ");
+  ret = ret.replace("四　","4 ");
+  ret = ret.replace("三　","3 ");
+  ret = ret.replace("二　","2 ");
+  ret = ret.replace("一　","1 ");
+
+  ret = ret.replace("公有財産(土地・建物)","土地・建物");
+
+  return ret;
+}
+
+
+
+function formatCategory3(str){
+  var ret = str;
+  var ind = ret.indexOf("(");
+  if(ind < 0 ){
+    ind = ret.indexOf("（");
+  }
+
+  if(ind >= 0){
+    ret = ret.substring(0,ind);
+  }
+
+  return ret;
+}
+
+
+
+function formatCategory4(str){
+  var ret = str;
+  if(!isNaN(ret)){
+    ret  = "";
+  }
+  ret = ret.substring(0,12);
+  return ret;
+}
+
+
+function formatCategory5(str){
+  var ret = str;
+  if(!isNaN(ret)){
+    ret  = "";
+  }
+  ret = ret.replace("土地（地積　㎡）","土地（㎡）");
+  ret = ret.replace("建物（延面積　㎡）","建物（㎡）");
+  return ret;
+}
+
+
+
+
+function formatCategory6(str){
+  var ret = str;
+  if(!isNaN(ret)){
+    ret  = "";
+  }
+  ret = ret.replace("土地（地積　㎡）","土地（㎡）");
+  ret = ret.replace("建物（延面積　㎡）","建物（㎡）");
+  return ret;
+}
+
+
+
+function formatCategoryValue(str){
+  var ret = Number(str);
+  if(!isNaN(ret)){
+    ret = ret.toLocaleString();
+  }
+  return ret;
+}
+
+
