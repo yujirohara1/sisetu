@@ -78,6 +78,7 @@ document.getElementById("selTdfk").addEventListener("change", function(){
   dispLoading();
 });
 
+var datalist = null;
 
 document.getElementById("selCity").addEventListener("change", function(){
   val = document.getElementById("selCity").value;
@@ -88,11 +89,8 @@ document.getElementById("selCity").addEventListener("change", function(){
   .then(res => res.json())
   .then(jsonData => {
     list = JSON.parse(jsonData.data);
+    datalist = list;
     createTable(list);
-    if (objChart1) {
-      objChart1.destroy();
-    }
-    createGraphTest(list);
     UndispLoading();
     return;
     //document.querySelector('#lblFileProperty').innerHTML = "取り込み完了！"; //jsonData.data;
@@ -170,8 +168,19 @@ function createTable(datalist){
         // $("#tableCustomer tbody td").removeClass('row_selected customer');        
         // $(event.target.parentNode).addClass('row_selected customer');
         event.srcElement.parentElement.classList.add("row_selected");
-        var a = "";
-        a = "1";
+        var rowindex = Number(event.srcElement.parentElement.cells[0].innerText);
+        // if (objChart1) {
+        //   objChart1.destroy();
+        // }
+        var graphId = createGraphArea();
+        var label = "(" + rowindex + ") " 
+          + event.srcElement.parentElement.cells[1].innerText + " / "
+          + event.srcElement.parentElement.cells[2].innerText + " / "
+          + event.srcElement.parentElement.cells[3].innerText + " / "
+          + event.srcElement.parentElement.cells[4].innerText + " / "
+          + event.srcElement.parentElement.cells[5].innerText ;
+        createGraphTest(datalist, rowindex, graphId, label);
+
       });
       tbody.appendChild(trow);
       trow = document.createElement('tr');
@@ -200,6 +209,33 @@ function IsSameTR_NextRow(datalist, i){
 
   }
   return false;
+}
+
+
+function createGraphArea(){
+  //divGraphGroup
+  let graphs = document.querySelectorAll("[id^='divGraphArea']"); //' #divGraphArea *');
+  var max = 1;
+  if(graphs.length > 0){
+    for(let i =0; i<graphs.length; i++){
+    //for(let i in graphs){
+      if(max < Number(graphs[i].id.replace("divGraphArea",""))){
+        max = Number(graphs[i].id.replace("divGraphArea",""));
+      }
+    }
+  }
+
+  
+  tmpDivArea = document.createElement("div");
+  tmpDivArea.classList.add("col-4");
+  tmpDivArea.id = "divGraphArea" + (max+1);
+  document.getElementById("divGraphRow1").appendChild(tmpDivArea);
+
+  tmpCanvas = document.createElement("canvas");
+  tmpCanvas.id = "canvasChart" + (max+1);
+  document.getElementById(tmpDivArea.id).appendChild(tmpCanvas);
+
+  return max+1;
 }
 
 //var table = new DataTable("table");
@@ -497,30 +533,22 @@ function graphBarValue(datalist){
 }
 
 
-objChart1 = null;
-function createGraphTest(datalist){
-  const ctx = document.getElementById('canvasChart1').getContext('2d');
-  objChart1 = new Chart(ctx, {
+//var objChart1 = null;
+function createGraphTest(datalist, rowindex, canvasId, labelStr){
+  const ctx = document.getElementById("canvasChart" + canvasId).getContext('2d');
+  var objChart1 = new Chart(ctx, {
       type: 'line',
       data: {
           labels: graphBarHanrei(datalist),
           datasets: [{
-              label: '# of Votes',
-              data: datalist.filter(value => value["col_index"] ==7).map(item => item["val_num"]), //[12, 19, 3, 5, 2, 3],tableから取得する
+              label: labelStr,
+              data: datalist.filter(value => value["col_index"] ==rowindex).map(item => item["val_num"]), //[12, 19, 3, 5, 2, 3],tableから取得する
               backgroundColor: [
                   'rgba(255, 99, 132, 0.2)',
-                  'rgba(54, 162, 235, 0.2)',
-                  'rgba(255, 206, 86, 0.2)',
-                  'rgba(75, 192, 192, 0.2)',
-                  'rgba(153, 102, 255, 0.2)',
                   'rgba(255, 159, 64, 0.2)'
               ],
               borderColor: [
                   'rgba(255, 99, 132, 1)',
-                  'rgba(54, 162, 235, 1)',
-                  'rgba(255, 206, 86, 1)',
-                  'rgba(75, 192, 192, 1)',
-                  'rgba(153, 102, 255, 1)',
                   'rgba(255, 159, 64, 1)'
               ],
               borderWidth: 1
@@ -530,6 +558,12 @@ function createGraphTest(datalist){
           scales: {
               y: {
                   beginAtZero: true
+              }
+          },
+          plugins: {
+              title: {
+                  display: true,
+                  text: labelStr
               }
           }
       }
