@@ -3,7 +3,7 @@ td.highlight {
 }
 
 .row_selected td {
-    background-color: #dbedff !important; /* Add !important to make sure override datables base styles */
+    background-color: rgba(255, 99, 132, 0.2) !important; /* Add !important to make sure override datables base styles */
 }
 
 table.dataTable thead tr {

@@ -60,7 +60,7 @@ document.getElementById("inputGroupFile").addEventListener("change", function(){
 
 
 document.getElementById("selTdfk").addEventListener("change", function(){
-  AllClearGraphs();
+  //AllClearGraphs();
   AllClearTable();
   val = document.getElementById("selTdfk").value;
   fetch('/getCityListByTdfkCd/' + val, {
@@ -98,7 +98,7 @@ function AllClearTable(){
 var datalist = null;
 
 document.getElementById("selCity").addEventListener("change", function(){
-  AllClearGraphs();
+  //AllClearGraphs();
   AllClearTable();
   val = document.getElementById("selCity").value;
   fetch('/getFullRecordByDantaiCd/' + val, {
@@ -197,7 +197,9 @@ function createTable(datalist){
         // if (objChart1) {
         //   objChart1.destroy();
         // }
-        var title = "(" + rowindex + ") " 
+        var title = getSelectedTdfkNm() + " " + getSelectedCityNm() 
+          + "     "
+          + "(" + rowindex + ") " 
           + event.srcElement.parentElement.cells[1].innerText + " / "
           + event.srcElement.parentElement.cells[2].innerText + " / "
           + event.srcElement.parentElement.cells[3].innerText + " / "
@@ -207,7 +209,7 @@ function createTable(datalist){
         let graphs = document.querySelectorAll("[id^='canvasChart']"); //' #divGraphArea *');
         for(let i in graphs){
           if(graphs[i].title == title){
-            graphs[i].style.backgroundColor="#c6c6ff";
+            graphs[i].style.backgroundColor="rgba(255, 99, 132, 0.2)";
             graphs[i].style.opacity = "0.5";
             setTimeout(function(){
               graphs[i].style.backgroundColor = "";
@@ -263,11 +265,21 @@ function createGraphArea(){
     }
   }
 
-  
-  tmpDivArea = document.createElement("div");
+  //var tmpSpan = document.createElement("span");
+  //tmpSpan.innerHTML = getSelectedTdfkNm() + " " + getSelectedCityNm();
+  var spanBadge = document.createElement("span");
+  spanBadge.innerText = "消去";
+  spanBadge.classList.add("badge"); // rounded-pill bg-primary
+  spanBadge.classList.add("rounded-pill"); //  bg-primary
+  spanBadge.classList.add("bg-primary"); //  text-end
+  spanBadge.classList.add("text-end"); //  
+
+
+  var tmpDivArea = document.createElement("div");
   tmpDivArea.classList.add("col-4");
   tmpDivArea.id = "divGraphArea" + (max+1);
   document.getElementById("divGraphRow1").appendChild(tmpDivArea);
+  tmpDivArea.appendChild(spanBadge);
 
   tmpCanvas = document.createElement("canvas");
   tmpCanvas.id = "canvasChart" + (max+1);
@@ -276,6 +288,19 @@ function createGraphArea(){
   return max+1;
 }
 
+function getSelectedTdfkNm(){
+  var obj1 = document.getElementById('selTdfk');
+  var idx1 = obj1.selectedIndex;
+  var txt1  = obj1.options[idx1].text;
+  return txt1;
+}
+
+function getSelectedCityNm(){
+  var obj1 = document.getElementById('selCity');
+  var idx1 = obj1.selectedIndex;
+  var txt1  = obj1.options[idx1].text;
+  return txt1;
+}
 //var table = new DataTable("table");
 
 function createCitySelectOption(datalist){
@@ -584,11 +609,9 @@ function createGraphTest(datalist, rowindex, canvasId, labelStr){
               data: datalist.filter(value => value["col_index"] ==rowindex).map(item => item["val_num"]), //[12, 19, 3, 5, 2, 3],tableから取得する
               backgroundColor: [
                   'rgba(255, 99, 132, 0.2)',
-                  'rgba(255, 159, 64, 0.2)'
               ],
               borderColor: [
                   'rgba(255, 99, 132, 1)',
-                  'rgba(255, 159, 64, 1)'
               ],
               borderWidth: 1
           }]
@@ -602,6 +625,7 @@ function createGraphTest(datalist, rowindex, canvasId, labelStr){
           plugins: {
               title: {
                   display: true,
+                  align: "start",
                   text: labelStr
               }
           }
