@@ -218,7 +218,7 @@ function createTable(datalist){
             return;
           }
         }
-        var graphId = createGraphArea();
+        var graphId = createGraphArea(rowindex);
         createGraphTest(datalist, rowindex, graphId, title);
 
       });
@@ -252,7 +252,24 @@ function IsSameTR_NextRow(datalist, i){
 }
 
 
-function createGraphArea(){
+function destroyGraph(key, rowindex){
+  var id = key.split("_")[0]
+  let graphDiv = document.querySelector("#" + id); 
+  if (graphDiv) {
+    document.getElementById("divGraphRow1").removeChild(graphDiv)
+    var tablerows = document.getElementById("mainTable").rows;
+    for(let i=0; i<tablerows.length; i++){
+      if(tablerows[Number(i)].cells[0].innerText == rowindex){
+        //tablerows[Number(i)].style.backgroundColor = "";
+        tablerows[Number(i)].classList.remove("row_selected");
+        //bg.classList.remove('is-hide');
+
+      }
+    }
+  }
+}
+
+function createGraphArea(rowindex){
   //divGraphGroup
   let graphs = document.querySelectorAll("[id^='divGraphArea']"); //' #divGraphArea *');
   var max = 1;
@@ -273,6 +290,11 @@ function createGraphArea(){
   spanBadge.classList.add("rounded-pill"); //  bg-primary
   spanBadge.classList.add("bg-primary"); //  text-end
   spanBadge.classList.add("text-end"); //  
+  spanBadge.classList.add("badge-clickable"); //
+  spanBadge.id = "divGraphArea" + (max+1) + "_deleteBtn";
+  spanBadge.addEventListener('click', function() {
+    destroyGraph(spanBadge.id, rowindex);
+  });
 
 
   var tmpDivArea = document.createElement("div");
