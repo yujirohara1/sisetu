@@ -163,23 +163,44 @@ function createTable(datalist){
     } else {
       //row_selected
       trow.addEventListener('click', (event) => {
+        var rowindex = Number(event.srcElement.parentElement.cells[0].innerText);
+        var valueArray = datalist.filter(value => value["col_index"] ==rowindex).map(item => item["val_num"]);
+        var valueMax = Math.max.apply(null, valueArray);
+        var valueMin = Math.min.apply(null, valueArray);
+        if(valueMax == 0 && valueMin == 0){
+          return;
+        }
         // $("#tableCustomer").removeClass('row_selected customer');        
         // $("#tableCustomer tbody tr").removeClass('row_selected customer');        
         // $("#tableCustomer tbody td").removeClass('row_selected customer');        
         // $(event.target.parentNode).addClass('row_selected customer');
         event.srcElement.parentElement.classList.add("row_selected");
-        var rowindex = Number(event.srcElement.parentElement.cells[0].innerText);
         // if (objChart1) {
         //   objChart1.destroy();
         // }
-        var graphId = createGraphArea();
-        var label = "(" + rowindex + ") " 
+        var title = "(" + rowindex + ") " 
           + event.srcElement.parentElement.cells[1].innerText + " / "
           + event.srcElement.parentElement.cells[2].innerText + " / "
           + event.srcElement.parentElement.cells[3].innerText + " / "
           + event.srcElement.parentElement.cells[4].innerText + " / "
           + event.srcElement.parentElement.cells[5].innerText ;
-        createGraphTest(datalist, rowindex, graphId, label);
+
+
+          
+        let graphs = document.querySelectorAll("[id^='canvasChart']"); //' #divGraphArea *');
+        for(let i in graphs){
+          if(graphs[i].title == title){
+            graphs[i].style.backgroundColor="#c6c6ff";
+            graphs[i].style.opacity = "0.5";
+            setTimeout(function(){
+              graphs[i].style.backgroundColor = "";
+              graphs[i].style.opacity = "";
+            },100);
+            return;
+          }
+        }
+        var graphId = createGraphArea();
+        createGraphTest(datalist, rowindex, graphId, title);
 
       });
       tbody.appendChild(trow);
@@ -535,6 +556,7 @@ function graphBarValue(datalist){
 
 //var objChart1 = null;
 function createGraphTest(datalist, rowindex, canvasId, labelStr){
+  document.getElementById("canvasChart" + canvasId).title = labelStr;
   const ctx = document.getElementById("canvasChart" + canvasId).getContext('2d');
   var objChart1 = new Chart(ctx, {
       type: 'line',
