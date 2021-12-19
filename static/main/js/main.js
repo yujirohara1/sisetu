@@ -60,6 +60,7 @@ document.getElementById("inputGroupFile").addEventListener("change", function(){
 
 
 document.getElementById("selTdfk").addEventListener("change", function(){
+  AllClearGraphs();
   val = document.getElementById("selTdfk").value;
   fetch('/getCityListByTdfkCd/' + val, {
     method: 'GET',
@@ -78,9 +79,18 @@ document.getElementById("selTdfk").addEventListener("change", function(){
   dispLoading();
 });
 
+
+function AllClearGraphs(){
+  var graphArea = document.getElementById("divGraphRow1");
+  while(graphArea.lastChild){
+    graphArea.removeChild(graphArea.lastChild);
+  }
+}
+
 var datalist = null;
 
 document.getElementById("selCity").addEventListener("change", function(){
+  AllClearGraphs();
   val = document.getElementById("selCity").value;
   fetch('/getFullRecordByDantaiCd/' + val, {
     method: 'GET',
@@ -185,8 +195,6 @@ function createTable(datalist){
           + event.srcElement.parentElement.cells[4].innerText + " / "
           + event.srcElement.parentElement.cells[5].innerText ;
 
-
-          
         let graphs = document.querySelectorAll("[id^='canvasChart']"); //' #divGraphArea *');
         for(let i in graphs){
           if(graphs[i].title == title){
