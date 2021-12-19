@@ -89,6 +89,10 @@ document.getElementById("selCity").addEventListener("change", function(){
   .then(jsonData => {
     list = JSON.parse(jsonData.data);
     createTable(list);
+    if (objChart1) {
+      objChart1.destroy();
+    }
+    createGraphTest(list);
     UndispLoading();
     return;
     //document.querySelector('#lblFileProperty').innerHTML = "取り込み完了！"; //jsonData.data;
@@ -108,17 +112,7 @@ function createTable(datalist){
   let thead = document.createElement('thead');
   let tbody = document.createElement('tbody');
 
-  let trow = document.createElement('tr');
-  let head_1 = document.createElement('th');
-  head_1.innerHTML = "aaaaa";
-  let head_2 = document.createElement('th');
-  head_2.innerHTML = "bbbb";
-  let head_3 = document.createElement('th');
-  head_3.innerHTML = "ccc";
-  trow.appendChild(head_1);
-  trow.appendChild(head_2);
-  trow.appendChild(head_3);
-  thead.appendChild(trow);
+  thead.appendChild(createHeader(datalist));
 
   var lastIndex = -1;
   var blAddRow = false;
@@ -129,11 +123,11 @@ function createTable(datalist){
     if(lastIndex != datalist[i].col_index){ //新しく行が始まったときにインデックスと見出し作成
       let tdataA = document.createElement('td');
       tdataA.innerHTML = datalist[i].col_index;
-      //trow.appendChild(tdataA);
+      trow.appendChild(tdataA);
   
       let tdataB = document.createElement('td');
       tdataB.innerHTML = formatCategory1(datalist[i].col_key1);
-      trow.appendChild(tdataB);
+      //trow.appendChild(tdataB);
   
       let tdataC = document.createElement('td');
       tdataC.innerHTML = formatCategory2(datalist[i].col_key2);
@@ -152,11 +146,11 @@ function createTable(datalist){
       trow.appendChild(tdataF);
       
       let tdataG = document.createElement('td');
-      tdataG.innerHTML = formatCategory6(datalist[i].col_key6);
+      tdataG.innerHTML = formatCategory6(datalist[i].col_key6, datalist[i]);
       trow.appendChild(tdataG);
       
       let tdataH = document.createElement('td');
-      tdataH.innerHTML = datalist[i].col_key7;
+      tdataH.innerHTML = formatCategory7(datalist[i].col_key7, datalist[i]);
       trow.appendChild(tdataH);
     }
 
@@ -169,6 +163,16 @@ function createTable(datalist){
     if(IsSameTR_NextRow(datalist, i)){
       ; //継続
     } else {
+      //row_selected
+      trow.addEventListener('click', (event) => {
+        // $("#tableCustomer").removeClass('row_selected customer');        
+        // $("#tableCustomer tbody tr").removeClass('row_selected customer');        
+        // $("#tableCustomer tbody td").removeClass('row_selected customer');        
+        // $(event.target.parentNode).addClass('row_selected customer');
+        event.srcElement.parentElement.classList.add("row_selected");
+        var a = "";
+        a = "1";
+      });
       tbody.appendChild(trow);
       trow = document.createElement('tr');
     }
@@ -180,6 +184,7 @@ function createTable(datalist){
   table.classList.add("table");
   table.classList.add("table-bordered");
   table.classList.add("table_sticky");
+  table.classList.add("table-hover");
   table.classList.add("fs-7"); //text-end
   table.id = "mainTable";
   document.getElementById('mainTableDiv').appendChild(table);
@@ -383,13 +388,39 @@ function formatCategory5(str){
 
 
 
-function formatCategory6(str){
+function formatCategory6(str, row){
   var ret = str;
   if(!isNaN(ret)){
     ret  = "";
   }
+  if(row.col_key5=="前年度末現在高"){
+    ret = "";
+  } else if(row.col_key5=="当年度中増減高"){
+    ret = "";
+  } else if(row.col_key5=="当年度末現在高"){
+    ret = "";
+  }
   ret = ret.replace("土地（地積　㎡）","土地（㎡）");
   ret = ret.replace("建物（延面積　㎡）","建物（㎡）");
+  return ret;
+}
+
+
+function formatCategory7(str, row){
+  var ret = str;
+  if(!isNaN(ret)){
+    ret  = "";
+  }
+  if(row.col_key6=="前年度末現在高"){
+    ret = "";
+  } else if(row.col_key6=="当年度中増減高"){
+    ret = "";
+  } else if(row.col_key6=="当年度末現在高"){
+    ret = "";
+  }
+  if(ret == ""){
+    ret = row.tani;
+  }
   return ret;
 }
 
@@ -404,3 +435,103 @@ function formatCategoryValue(str){
 }
 
 
+
+function createHeader(datalist){
+  let trow = document.createElement('tr');
+  let th = document.createElement('th');
+  th.innerHTML = "#";
+  trow.appendChild(th);
+  th = document.createElement('th');
+  th.innerHTML = "カテゴリ1";
+  trow.appendChild(th);
+  th = document.createElement('th');
+  th.innerHTML = "カテゴリ2";
+  trow.appendChild(th);
+  th = document.createElement('th');
+  th.innerHTML = "カテゴリ3";
+  trow.appendChild(th);
+  th = document.createElement('th');
+  th.innerHTML = "カテゴリ4";
+  trow.appendChild(th);
+  th = document.createElement('th');
+  th.innerHTML = "カテゴリ5";
+  trow.appendChild(th);
+  th = document.createElement('th');
+  th.innerHTML = "カテゴリ6";
+  trow.appendChild(th);
+
+  var nendoArray = datalist.map(item => item["nendo"]);
+  var nendoMax = Math.max.apply(null, nendoArray);
+  var nendoMin = Math.min.apply(null, nendoArray);
+
+  for(let i=nendoMin; i<= nendoMax; i++){
+    th = document.createElement('th');
+    th.innerHTML = i;
+    trow.appendChild(th);
+  }
+  return trow;
+}
+
+
+function graphBarHanrei(datalist){
+  var nendoArray = datalist.map(item => item["nendo"]);
+  var nendoMax = Math.max.apply(null, nendoArray);
+  var nendoMin = Math.min.apply(null, nendoArray);
+  var arr=[];
+  for(let i=nendoMin; i<= nendoMax; i++){
+    arr.push(i);
+  }
+  return arr;
+
+}
+
+
+function graphBarValue(datalist){
+  var valueArray = datalist.filter(value => value["col_index"] ==6).map(item => item["val_num"]);
+  var arr=[];
+  for(let i in valueArray){
+    arr.push(i);
+  }
+  return arr;
+
+}
+
+
+objChart1 = null;
+function createGraphTest(datalist){
+  const ctx = document.getElementById('canvasChart1').getContext('2d');
+  objChart1 = new Chart(ctx, {
+      type: 'line',
+      data: {
+          labels: graphBarHanrei(datalist),
+          datasets: [{
+              label: '# of Votes',
+              data: datalist.filter(value => value["col_index"] ==7).map(item => item["val_num"]), //[12, 19, 3, 5, 2, 3],tableから取得する
+              backgroundColor: [
+                  'rgba(255, 99, 132, 0.2)',
+                  'rgba(54, 162, 235, 0.2)',
+                  'rgba(255, 206, 86, 0.2)',
+                  'rgba(75, 192, 192, 0.2)',
+                  'rgba(153, 102, 255, 0.2)',
+                  'rgba(255, 159, 64, 0.2)'
+              ],
+              borderColor: [
+                  'rgba(255, 99, 132, 1)',
+                  'rgba(54, 162, 235, 1)',
+                  'rgba(255, 206, 86, 1)',
+                  'rgba(75, 192, 192, 1)',
+                  'rgba(153, 102, 255, 1)',
+                  'rgba(255, 159, 64, 1)'
+              ],
+              borderWidth: 1
+          }]
+      },
+      options: {
+          scales: {
+              y: {
+                  beginAtZero: true
+              }
+          }
+      }
+  });
+}
