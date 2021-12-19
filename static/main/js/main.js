@@ -61,6 +61,7 @@ document.getElementById("inputGroupFile").addEventListener("change", function(){
 
 document.getElementById("selTdfk").addEventListener("change", function(){
   AllClearGraphs();
+  AllClearTable();
   val = document.getElementById("selTdfk").value;
   fetch('/getCityListByTdfkCd/' + val, {
     method: 'GET',
@@ -87,10 +88,18 @@ function AllClearGraphs(){
   }
 }
 
+function AllClearTable(){
+  var tableDiv = document.getElementById("mainTableDiv");
+  while(tableDiv.lastChild){
+    tableDiv.removeChild(tableDiv.lastChild);
+  }
+}
+
 var datalist = null;
 
 document.getElementById("selCity").addEventListener("change", function(){
   AllClearGraphs();
+  AllClearTable();
   val = document.getElementById("selCity").value;
   fetch('/getFullRecordByDantaiCd/' + val, {
     method: 'GET',
