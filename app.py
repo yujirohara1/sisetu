@@ -439,11 +439,12 @@ def createSokatuMain(xl):
   timestampStr = timestamp.strftime('%Y%m%d%H%M%S%f')
   dictData = {}
   for sh in xl:
-    for row in xl[sh].itertuples():
-      dictData[(sh + str(row.Index+2))]=[]
-      for cell in row:
-        if str(cell) != "nan":
-          dictData[(sh + str(row.Index+2))].append(str(cell).replace( '\n' , '' ))
+    if sh == "総括表":
+      for row in xl[sh].itertuples():
+        dictData[(sh + str(row.Index+2))]=[]
+        for cell in row:
+          if str(cell) != "nan":
+            dictData[(sh + str(row.Index+2))].append(str(cell).replace( '\n' , '' ).replace(" ",""))
 
   kokuChoCount = 0
   jukiJinkoCount = 0
@@ -480,17 +481,20 @@ def createSokatuMain(xl):
   # tdfkCd = tdfkCodeByName(tdfkNm)
   nendo = seireki(dictData["総括表3"][5])
   dictInsData = {}
-  for rowid in dictData:
-    for val in dictData[rowid]:
-      if isfloat(str(val)):
-        pass
-      else:
-        tmp = findPair(dictData, val)
-        if tmp[1] != "" and tmp[0] != "-" :
-          dictInsData[tmp[0]] = tmp[1]
-          
-      a = 1
-      b = a
+  try:
+    for rowid in dictData:
+      for val in dictData[rowid]:
+        if isfloat(str(val)):
+          pass
+        else:
+          tmp = findPair(dictData, val)
+          if tmp[1] != "" and tmp[0] != "-" and tmp[0] != "うち日本人(人)" and tmp[0] != "うち日本人(％)" :
+            dictInsData[tmp[0]] = tmp[1]
+  except:
+    # 何もしない
+    import traceback
+    traceback.print_exc()
+  
 
   colIndex = 1
   for rowid in dictInsData:
@@ -534,7 +538,11 @@ def createSokatuMain(xl):
 def isJukiJinko(key):
   tmp = key.split(".")
   if len(tmp)==3:
-    return True
+    tmp0 = tmp[0].replace("平","").replace("令","").replace("(人)","")
+    tmp1 = tmp[1].replace("平","").replace("令","").replace("(人)","")
+    tmp2 = tmp[1].replace("平","").replace("令","").replace("(人)","")
+    if isfloat(tmp0) and isfloat(tmp1) and isfloat(tmp2) :
+      return True
     # if isfloat(tmp[0]) and isfloat(tmp[1]) and isfloat(tmp[2]):
     #   if "(人)" in tmp[3]:
     #     return True
@@ -572,7 +580,7 @@ def findPair(dictData, targetKey):
         find=True
       else:
         if find:
-          if isfloat(val) or val=="-" or (val in str(tdfk.values())):
+          if isfloat(val) or val=="-" or (val in str(tdfk.values())) or isLeftNumeric(val):
             return [targetKey, val]
           else:
             return ["", ""]
@@ -584,6 +592,15 @@ def findPair(dictData, targetKey):
             #   return [targetKey + "_職員数", val]
             # else:
             #   return [targetKey, val]
+  return ["", ""]
+
+def isLeftNumeric(val):
+  tmp = str(val).split("(")
+  if len(tmp) == 2:
+    if isfloat(tmp[0]):
+      return True
+
+  return False
 
 def createSisetuMain(xl):
   timestamp = datetime.datetime.now()
