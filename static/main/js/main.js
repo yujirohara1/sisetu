@@ -242,6 +242,24 @@ function createTable(datalist){
 
 function IsSameTR_NextRow(datalist, i){
   try{
+    // if (
+    //   datalist[i].sheet_nm +
+    //   datalist[i].col_key1 +
+    //   datalist[i].col_key2 +
+    //   datalist[i].col_key3 +
+    //   datalist[i].col_key4 +
+    //   datalist[i].col_key5 +
+    //   datalist[i].col_key6 +
+    //   datalist[i].col_key7 == datalist[Number(i)+1].sheet_nm +
+    //     datalist[Number(i)+1].col_key1 +
+    //     datalist[Number(i)+1].col_key2 +
+    //     datalist[Number(i)+1].col_key3 +
+    //     datalist[Number(i)+1].col_key4 +
+    //     datalist[Number(i)+1].col_key5 +
+    //     datalist[Number(i)+1].col_key6 +
+    //     datalist[Number(i)+1].col_key7){
+    //   return true;
+    // }
     if (datalist[i].col_index == datalist[Number(i)+1].col_index){
       return true;
     }
@@ -445,6 +463,8 @@ function formatCategory1(str){
 }
 
 function formatCategory2(str){
+  if(str==null) return "";
+
   var ret = str;
   ret = ret.replace("十六　","16 ");
   ret = ret.replace("十五　","15 ");
@@ -471,6 +491,8 @@ function formatCategory2(str){
 
 
 function formatCategory3(str){
+  if(str==null) return "";
+
   var ret = str;
   var ind = ret.indexOf("(");
   if(ind < 0 ){
@@ -487,6 +509,8 @@ function formatCategory3(str){
 
 
 function formatCategory4(str){
+  if(str==null) return "";
+
   var ret = str;
   if(!isNaN(ret)){
     ret  = "";
@@ -497,6 +521,7 @@ function formatCategory4(str){
 
 
 function formatCategory5(str){
+  if(str==null) return "";
   var ret = str;
   if(!isNaN(ret)){
     ret  = "";
@@ -510,6 +535,7 @@ function formatCategory5(str){
 
 
 function formatCategory6(str, row){
+  if(str==null) return "";
   var ret = str;
   if(!isNaN(ret)){
     ret  = "";
@@ -528,6 +554,7 @@ function formatCategory6(str, row){
 
 
 function formatCategory7(str, row){
+  if(str==null) return "";
   var ret = str;
   if(!isNaN(ret)){
     ret  = "";

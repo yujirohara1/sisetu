@@ -23,7 +23,7 @@ class SisetuMain(db.Model):
     col_key11  = db.Column(db.String(),  primary_key=False) 
     col_key12  = db.Column(db.String(),  primary_key=False) 
     tani       = db.Column(db.String(), primary_key=False) 
-    val_num    = db.Column(db.BigInteger, primary_key=False) 
+    val_num    = db.Column(db.Numeric, primary_key=False) 
     val_char   = db.Column(db.String(), primary_key=False) 
     val_kba    = db.Column(db.String(), primary_key=False) 
     val_kbb    = db.Column(db.String(), primary_key=False) 

@@ -19,7 +19,7 @@ CREATE TABLE sisetu_main (
     col_key11 character varying(40) ,
     col_key12 character varying(40) ,
     tani      character varying(40),
-    val_num   bigint,
+    val_num   decimal,
     val_char  character varying(40),
     val_kba   character varying(40),
     val_kbb   character varying(40),
@@ -67,7 +67,7 @@ from
     sisetu_main a,
     nendo b
 where
-    a.col_index = 0 and
+    (a.col_index = 0 or a.sheet_nm = 'test') and
     a.nendo = b.nendo
 group by
     substring(a.dantai_cd,1,2),

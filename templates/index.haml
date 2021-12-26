@@ -1,6 +1,6 @@
 {% extends 'common.html' %}
  
-{% block title %}公共施設状況調経年比較表{% endblock %}
+{% block title %}地方財政{% endblock %}
 
 {% block content %}
 
@@ -8,7 +8,7 @@
   %div.row
     %div.col-4
       %h2.display-6
-        公共施設状況調経年比較表
+        日本の地方財政
     %div.col-2
       %select#selTdfk.form-select.form-select-sm(aria-label=".form-select-sm example"  style="margin-top:10px")
         %option(selected value="0")
@@ -32,8 +32,7 @@
     %div.modal-content
       %div.modal-header
         %display-6.modal-title#modalExcelUploadLabel
-          公共施設状況調経年比較表のエクセルファイルを取り込みます。
-        %button.btn-close (type="button" data-bs-dismiss="modal" aria-label="Close")
+          地方財政に関する統計ファイルを指定してください。
       %div.modal-body
         %div.input-group
           %input.form-control#inputGroupFile(type="file")

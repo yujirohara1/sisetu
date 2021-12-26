@@ -9,34 +9,47 @@ import datetime
 from flask_bootstrap import Bootstrap
 from marshmallow_sqlalchemy import ModelSchema
 
-from reportlab.pdfgen import canvas
-from reportlab.pdfbase import pdfmetrics
-from reportlab.pdfbase.cidfonts import UnicodeCIDFont
-from reportlab.lib.pagesizes import A4, portrait
-from reportlab.platypus import Table, TableStyle
-from reportlab.lib.units import mm
-from reportlab.lib import colors
+# from reportlab.pdfgen import canvas
+# from reportlab.pdfbase import pdfmetrics
+# from reportlab.pdfbase.cidfonts import UnicodeCIDFont
+# from reportlab.lib.pagesizes import A4, portrait
+# from reportlab.platypus import Table, TableStyle
+# from reportlab.lib.units import mm
+# from reportlab.lib import colors
 from api.database import db, ma
 from models.sisetumain import SisetuMain, SisetuMainSchema, VCity, VCitySchema
 from sqlalchemy.sql import text
 from sqlalchemy import distinct
 from sqlalchemy import desc
 from sqlalchemy import asc
+from sqlalchemy.sql import func
 import json
 # from rq import Queue
 # from worker import conn
-import PyPDF2
+# import PyPDF2
 # from bottle import route, run
-import smtplib
-from email.mime.text import MIMEText
-from email.utils import formatdate
+# import smtplib
+# from email.mime.text import MIMEText
+# from email.utils import formatdate
 import csv
 import requests
 from bs4 import BeautifulSoup
 import pandas as pd
 import math
+from decimal import Decimal
 
 DELIMIT = "@|@|@"
+
+
+
+tdfk = {
+  "01" : "北海道"   ,"02" : "青森県"   ,"03" : "岩手県"   ,"04" : "宮城県"   ,"05" : "秋田県"   ,"06" : "山形県"   ,"07" : "福島県"   ,"08" : "茨城県"   ,
+  "09" : "栃木県"   ,"10" : "群馬県"   ,"11" : "埼玉県"   ,"12" : "千葉県"   ,"13" : "東京都"   ,"14" : "神奈川県" ,"15" : "新潟県"   ,"16" : "富山県"   ,
+  "17" : "石川県"   ,"18" : "福井県"   ,"19" : "山梨県"   ,"20" : "長野県"   ,"21" : "岐阜県"   ,"22" : "静岡県"   ,"23" : "愛知県"   ,"24" : "三重県"   ,
+  "25" : "滋賀県"   ,"26" : "京都府"   ,"27" : "大阪府"   ,"28" : "兵庫県"   ,"29" : "奈良県"   ,"30" : "和歌山県" ,"31" : "鳥取県"   ,"32" : "島根県"   ,
+  "33" : "岡山県"   ,"34" : "広島県"   ,"35" : "山口県"   ,"36" : "徳島県"   ,"37" : "香川県"   ,"38" : "愛媛県"   ,"39" : "高知県"   ,"40" : "福岡県"   ,
+  "41" : "佐賀県"   ,"42" : "長崎県"   ,"43" : "熊本県"   ,"44" : "大分県"   ,"45" : "宮崎県"   ,"46" : "鹿児島県" ,"47" : "沖縄県"
+}
 
 
 class FlaskWithHamlish(Flask):
@@ -112,8 +125,8 @@ def SendMail_AccountToroku():
 def load_user(user_id):
   return users.get(int(user_id))
 
-# db_uri = "postgresql://postgres:yjrhr1102@localhost:5432/newdb3" #開発用
-db_uri = os.environ.get('HEROKU_POSTGRESQL_PUCE_URL') #本番用
+db_uri = "postgresql://postgres:yjrhr1102@localhost:5432/newdb3" #開発用
+# db_uri = os.environ.get('HEROKU_POSTGRESQL_PUCE_URL') #本番用
 app.config['SQLALCHEMY_DATABASE_URI'] = db_uri 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
@@ -124,336 +137,513 @@ ma.init_app(app)
 @app.route("/favicon.ico")
 def favicon():
     return app.send_static_file("favicon.ico")
-    
-@app.route('/getCustomer_Main/<group_kb>/<yuko_muko>/<nen>/<tuki>')
-@login_required
-def resJson_getCustomer_Main(group_kb, yuko_muko, nen, tuki):
-      # if yuko_muko == "2":
-      #   customers = Customer.query.filter(Customer.group_id==group_kb, Customer.tenant_id==current_user.tenant_id).all()
-      # elif yuko_muko == "1":
-      #   customers = Customer.query.outerjoin(Kakute, Kakute.customer_id==Customer.id).filter(Customer.group_id==group_kb, Customer.list!=None, Customer.tenant_id==current_user.tenant_id, Kakute.nen==2020, Kakute.tuki==3).all()
-      # else:
-      #   customers = Customer.query.filter(Customer.group_id==group_kb, Customer.list==None, Customer.tenant_id==current_user.tenant_id).all()
-      
-      sql = " "
-      sql = sql + " SELECT "
-      sql = sql + "     c.*, "
-      sql = sql + "     k.kakute_ymdt "
-      sql = sql + " from "
-      sql = sql + "    " + TableWhereTenantId("customer") + " c "
-      sql = sql + " left join "
-      sql = sql + "    (select * from " + TableWhereTenantId("kakute") + " A where nen = " + nen + " and tuki = " + tuki + ") k "
-      sql = sql + " on "
-      sql = sql + "     c.id = k.customer_id "
-      sql = sql + " where "
-      sql = sql + "     c.group_id = " + group_kb + " "
-      if yuko_muko == "2":
-        sql = sql + "     "
-      elif yuko_muko == "1":
-        sql = sql + "  and   c.list is not null "
-      else:
-        sql = sql + "  and   c.list is null "
-      
-      customernentuki = db.session.execute(text(sql))
-      customernentuki_schema = CustomerNentukiSchema(many=True)
-      return jsonify({'data': customernentuki_schema.dumps(customernentuki, ensure_ascii=False)})
 
-@app.route('/getItem_Daicho/<itemname1>')
-@login_required
-def resJson_getItem_Daicho(itemname1):
-    if itemname1=="すべて":
-      items = Item.query.filter(Item.del_flg==0, Item.tenant_id==current_user.tenant_id).all()
-    else:
-      items = Item.query.filter(Item.del_flg==0,Item.name1==itemname1, Item.tenant_id==current_user.tenant_id).all()
 
-    items_schema = ItemSchema(many=True)
-    return jsonify({'data': items_schema.dumps(items, ensure_ascii=False)})
+# @app.route('/getCustomer_Main/<group_kb>/<yuko_muko>/<nen>/<tuki>')
+# @login_required
+# def resJson_getCustomer_Main(group_kb, yuko_muko, nen, tuki):
+#       # if yuko_muko == "2":
+#       #   customers = Customer.query.filter(Customer.group_id==group_kb, Customer.tenant_id==current_user.tenant_id).all()
+#       # elif yuko_muko == "1":
+#       #   customers = Customer.query.outerjoin(Kakute, Kakute.customer_id==Customer.id).filter(Customer.group_id==group_kb, Customer.list!=None, Customer.tenant_id==current_user.tenant_id, Kakute.nen==2020, Kakute.tuki==3).all()
+#       # else:
+#       #   customers = Customer.query.filter(Customer.group_id==group_kb, Customer.list==None, Customer.tenant_id==current_user.tenant_id).all()
+      
+#       sql = " "
+#       sql = sql + " SELECT "
+#       sql = sql + "     c.*, "
+#       sql = sql + "     k.kakute_ymdt "
+#       sql = sql + " from "
+#       sql = sql + "    " + TableWhereTenantId("customer") + " c "
+#       sql = sql + " left join "
+#       sql = sql + "    (select * from " + TableWhereTenantId("kakute") + " A where nen = " + nen + " and tuki = " + tuki + ") k "
+#       sql = sql + " on "
+#       sql = sql + "     c.id = k.customer_id "
+#       sql = sql + " where "
+#       sql = sql + "     c.group_id = " + group_kb + " "
+#       if yuko_muko == "2":
+#         sql = sql + "     "
+#       elif yuko_muko == "1":
+#         sql = sql + "  and   c.list is not null "
+#       else:
+#         sql = sql + "  and   c.list is null "
+      
+#       customernentuki = db.session.execute(text(sql))
+#       customernentuki_schema = CustomerNentukiSchema(many=True)
+#       return jsonify({'data': customernentuki_schema.dumps(customernentuki, ensure_ascii=False)})
+
+# @app.route('/getItem_Daicho/<itemname1>')
+# @login_required
+# def resJson_getItem_Daicho(itemname1):
+#     if itemname1=="すべて":
+#       items = Item.query.filter(Item.del_flg==0, Item.tenant_id==current_user.tenant_id).all()
+#     else:
+#       items = Item.query.filter(Item.del_flg==0,Item.name1==itemname1, Item.tenant_id==current_user.tenant_id).all()
+
+#     items_schema = ItemSchema(many=True)
+#     return jsonify({'data': items_schema.dumps(items, ensure_ascii=False)})
 
      
-@app.route('/getItemGroup_Daicho/')
-@login_required
-def resJson_getItemGroup_Daicho():
-     itemgroup = VItemGroup.query.filter(VItemGroup.tenant_id==current_user.tenant_id).all()
-     itemsgroup_schema = VItemGroupSchema(many=True)
-     return jsonify({'data': itemsgroup_schema.dumps(itemgroup, ensure_ascii=False)})
+# @app.route('/getItemGroup_Daicho/')
+# @login_required
+# def resJson_getItemGroup_Daicho():
+#      itemgroup = VItemGroup.query.filter(VItemGroup.tenant_id==current_user.tenant_id).all()
+#      itemsgroup_schema = VItemGroupSchema(many=True)
+#      return jsonify({'data': itemsgroup_schema.dumps(itemgroup, ensure_ascii=False)})
 
      
 
-@app.route('/getVDaichoA_ByCusotmerId/<customerid>')
-@login_required
-def resJson_getVDaichoA_ByCusotmerId(customerid):
-      daicho = VDaichoA.query.filter(VDaichoA.customer_id==customerid, VDaichoA.tenant_id==current_user.tenant_id).all()
-      daicho_schema = VDaichoASchema(many=True)
-      return jsonify({'data': daicho_schema.dumps(daicho, ensure_ascii=False)})
+# @app.route('/getVDaichoA_ByCusotmerId/<customerid>')
+# @login_required
+# def resJson_getVDaichoA_ByCusotmerId(customerid):
+#       daicho = VDaichoA.query.filter(VDaichoA.customer_id==customerid, VDaichoA.tenant_id==current_user.tenant_id).all()
+#       daicho_schema = VDaichoASchema(many=True)
+#       return jsonify({'data': daicho_schema.dumps(daicho, ensure_ascii=False)})
 
-@app.route('/getVSeikyuA_ByCusotmerIdAndTuki/<customerid>/<nentuki>')
-@login_required
-def resJson_getVSeikyuA_ByCusotmerId(customerid, nentuki):
-      seikyu = VSeikyuA.query.filter(VSeikyuA.customer_id==customerid, VSeikyuA.nen==nentuki[0:4], VSeikyuA.tuki==nentuki[4:6], VSeikyuA.tenant_id==current_user.tenant_id).all()
-      seikyu_schema = VSeikyuASchema(many=True)
-      return jsonify({'data': seikyu_schema.dumps(seikyu, ensure_ascii=False)})
+# @app.route('/getVSeikyuA_ByCusotmerIdAndTuki/<customerid>/<nentuki>')
+# @login_required
+# def resJson_getVSeikyuA_ByCusotmerId(customerid, nentuki):
+#       seikyu = VSeikyuA.query.filter(VSeikyuA.customer_id==customerid, VSeikyuA.nen==nentuki[0:4], VSeikyuA.tuki==nentuki[4:6], VSeikyuA.tenant_id==current_user.tenant_id).all()
+#       seikyu_schema = VSeikyuASchema(many=True)
+#       return jsonify({'data': seikyu_schema.dumps(seikyu, ensure_ascii=False)})
 
-@app.route('/getCustomer_ById/<customerid>')
-@login_required
-def resJson_getCustomer_ById(customerid):
-      customer = Customer.query.filter(Customer.id==customerid, Customer.tenant_id==current_user.tenant_id).all()
-      customer_schema = CustomerSchema(many=True)
-      return jsonify({'data': customer_schema.dumps(customer, ensure_ascii=False)})
-
-
-@app.route('/getItem_ById/<itemid>')
-@login_required
-def resJson_getItem_ById(itemid):
-      item = Item.query.filter(Item.id==itemid, Item.tenant_id==current_user.tenant_id).all()
-      item_schema = ItemSchema(many=True)
-      return jsonify({'data': item_schema.dumps(item, ensure_ascii=False)})
-
-@app.route('/getDaicho_ByItemId/<itemid>')
-@login_required
-def resJson_getDaicho_ByItemId(itemid):
-      daicho = VDaichoA.query.filter(VDaichoA.item_id==itemid, VDaichoA.tenant_id==current_user.tenant_id).all()
-      daicho_schema = VDaichoASchema(many=True)
-      return jsonify({'data': daicho_schema.dumps(daicho, ensure_ascii=False)})
-
-@app.route('/getSeikyuNengetuShukei_Main')
-@login_required
-def resJson_getSeikyuNengetuShukei_Main():
-      seikyu = VSeikyuC.query.filter(VSeikyuC.tenant_id==current_user.tenant_id).all()
-      seikyu_schema = VSeikyuCSchema(many=True)
-      return jsonify({'data': seikyu_schema.dumps(seikyu, ensure_ascii=False)})
+# @app.route('/getCustomer_ById/<customerid>')
+# @login_required
+# def resJson_getCustomer_ById(customerid):
+#       customer = Customer.query.filter(Customer.id==customerid, Customer.tenant_id==current_user.tenant_id).all()
+#       customer_schema = CustomerSchema(many=True)
+#       return jsonify({'data': customer_schema.dumps(customer, ensure_ascii=False)})
 
 
-@app.route('/getSeikyuNengetuCustomer_Main/<nen>/<tuki>/<groupkb>')
-@login_required
-def resJson_getSeikyuNengetuCustomer_Main(nen, tuki, groupkb):
-      seikyu = VSeikyuB.query.filter(VSeikyuB.nen==nen, VSeikyuB.tuki==tuki, VSeikyuB.group_id==groupkb, VSeikyuB.tenant_id==current_user.tenant_id).all()
-      seikyu_schema = VSeikyuBSchema(many=True)
-      return jsonify({'data': seikyu_schema.dumps(seikyu, ensure_ascii=False)})
+# @app.route('/getItem_ById/<itemid>')
+# @login_required
+# def resJson_getItem_ById(itemid):
+#       item = Item.query.filter(Item.id==itemid, Item.tenant_id==current_user.tenant_id).all()
+#       item_schema = ItemSchema(many=True)
+#       return jsonify({'data': item_schema.dumps(item, ensure_ascii=False)})
+
+# @app.route('/getDaicho_ByItemId/<itemid>')
+# @login_required
+# def resJson_getDaicho_ByItemId(itemid):
+#       daicho = VDaichoA.query.filter(VDaichoA.item_id==itemid, VDaichoA.tenant_id==current_user.tenant_id).all()
+#       daicho_schema = VDaichoASchema(many=True)
+#       return jsonify({'data': daicho_schema.dumps(daicho, ensure_ascii=False)})
+
+# @app.route('/getSeikyuNengetuShukei_Main')
+# @login_required
+# def resJson_getSeikyuNengetuShukei_Main():
+#       seikyu = VSeikyuC.query.filter(VSeikyuC.tenant_id==current_user.tenant_id).all()
+#       seikyu_schema = VSeikyuCSchema(many=True)
+#       return jsonify({'data': seikyu_schema.dumps(seikyu, ensure_ascii=False)})
+
+
+# @app.route('/getSeikyuNengetuCustomer_Main/<nen>/<tuki>/<groupkb>')
+# @login_required
+# def resJson_getSeikyuNengetuCustomer_Main(nen, tuki, groupkb):
+#       seikyu = VSeikyuB.query.filter(VSeikyuB.nen==nen, VSeikyuB.tuki==tuki, VSeikyuB.group_id==groupkb, VSeikyuB.tenant_id==current_user.tenant_id).all()
+#       seikyu_schema = VSeikyuBSchema(many=True)
+#       return jsonify({'data': seikyu_schema.dumps(seikyu, ensure_ascii=False)})
 
 
 
-@app.route('/createSeikyu/<customerid>/<nentuki>/<sakujonomi>')
-@login_required
-def dbUpdate_insSeikyu(customerid, nentuki, sakujonomi):
-  y = int(nentuki[0:4])
-  m = int(nentuki[4:6])
+# @app.route('/createSeikyu/<customerid>/<nentuki>/<sakujonomi>')
+# @login_required
+# def dbUpdate_insSeikyu(customerid, nentuki, sakujonomi):
+#   y = int(nentuki[0:4])
+#   m = int(nentuki[4:6])
   
-  sql = " "
-  sql = sql + " delete from seikyu "
-  sql = sql + " where tenant_id = '" + current_user.tenant_id + "' "
-  if customerid != '-1' :
-    sql = sql + "     and customer_id = " + customerid + " "
+#   sql = " "
+#   sql = sql + " delete from seikyu "
+#   sql = sql + " where tenant_id = '" + current_user.tenant_id + "' "
+#   if customerid != '-1' :
+#     sql = sql + "     and customer_id = " + customerid + " "
   
-  sql = sql + "     and cast(to_char(deliver_ymd,'yyyy') as integer) = " + str(y) + " "
-  sql = sql + "     and cast(to_char(deliver_ymd,'mm') as integer) = " + str(m) + " "
-  db.session.execute(text(sql))
+#   sql = sql + "     and cast(to_char(deliver_ymd,'yyyy') as integer) = " + str(y) + " "
+#   sql = sql + "     and cast(to_char(deliver_ymd,'mm') as integer) = " + str(m) + " "
+#   db.session.execute(text(sql))
   
-  if sakujonomi == 'true' :
-    db.session.commit()
-    return "1"
+#   if sakujonomi == 'true' :
+#     db.session.commit()
+#     return "1"
   
-  blAri = False
-  for d in range(1,32):
-    if isDate(y, m, d):
-      deliverymdstr="%04d/%02d/%02d"%(y,m,d)
-      deliverymd=datetime.datetime.strptime(deliverymdstr,"%Y/%m/%d")
+#   blAri = False
+#   for d in range(1,32):
+#     if isDate(y, m, d):
+#       deliverymdstr="%04d/%02d/%02d"%(y,m,d)
+#       deliverymd=datetime.datetime.strptime(deliverymdstr,"%Y/%m/%d")
       
-      sql = " "
-      sql = sql + " SELECT "
-      sql = sql + "     d.customer_id, "
-      sql = sql + "     to_date('" + deliverymdstr + "','yyyy/mm/dd') deliver_ymd, "
-      sql = sql + "     d.item_id, "
-      sql = sql + "     i.tanka, "
-      sql = sql + "     null price_sub, "
-      sql = sql + "     d.quantity, "
-      sql = sql + "     'dummy' user_id, "
-      sql = sql + "     CURRENT_TIMESTAMP "
-      sql = sql + " from "
-      sql = sql + "    " + TableWhereTenantId("daicho") + " d "
-      sql = sql + " inner join "
-      sql = sql + "    " + TableWhereTenantId("customer") + " c "
-      sql = sql + " on "
-      sql = sql + "     d.customer_id =  c.id "
-      sql = sql + " inner join "
-      sql = sql + "    " + TableWhereTenantId("item") + " i "
-      sql = sql + " on "
-      sql = sql + "     d.item_id =  i.id "
-      sql = sql + " where "
-      if customerid != '-1' :
-        sql = sql + "     d.customer_id = " + customerid + " and "
-      sql = sql + "     d.youbi = " + str(deliverymd.weekday()+1) + " and "
-      sql = sql + "     c.list is not null and "
-      sql = sql + "     c.list <> 0 "
-      # print(sql)
+#       sql = " "
+#       sql = sql + " SELECT "
+#       sql = sql + "     d.customer_id, "
+#       sql = sql + "     to_date('" + deliverymdstr + "','yyyy/mm/dd') deliver_ymd, "
+#       sql = sql + "     d.item_id, "
+#       sql = sql + "     i.tanka, "
+#       sql = sql + "     null price_sub, "
+#       sql = sql + "     d.quantity, "
+#       sql = sql + "     'dummy' user_id, "
+#       sql = sql + "     CURRENT_TIMESTAMP "
+#       sql = sql + " from "
+#       sql = sql + "    " + TableWhereTenantId("daicho") + " d "
+#       sql = sql + " inner join "
+#       sql = sql + "    " + TableWhereTenantId("customer") + " c "
+#       sql = sql + " on "
+#       sql = sql + "     d.customer_id =  c.id "
+#       sql = sql + " inner join "
+#       sql = sql + "    " + TableWhereTenantId("item") + " i "
+#       sql = sql + " on "
+#       sql = sql + "     d.item_id =  i.id "
+#       sql = sql + " where "
+#       if customerid != '-1' :
+#         sql = sql + "     d.customer_id = " + customerid + " and "
+#       sql = sql + "     d.youbi = " + str(deliverymd.weekday()+1) + " and "
+#       sql = sql + "     c.list is not null and "
+#       sql = sql + "     c.list <> 0 "
+#       # print(sql)
       
-      # print(db.session.execute(text(sql)).fetchone())
+#       # print(db.session.execute(text(sql)).fetchone())
       
-      if db.session.execute(text(sql)).fetchone() is not None:
-        # print(db.session.execute(text(sql)).fetchone())
-        blAri = True
-        data_list = db.session.execute(text(sql))
-        seikyus = [{'customer_id':d[0], 'deliver_ymd': d[1], 'item_id': d[2],
-                  'price': d[3], 'price_sub': d[4], 'quantity': d[5], 'user_id': current_user.name, 'ymdt': d[7], 'tenant_id': current_user.tenant_id} for d in data_list]
+#       if db.session.execute(text(sql)).fetchone() is not None:
+#         # print(db.session.execute(text(sql)).fetchone())
+#         blAri = True
+#         data_list = db.session.execute(text(sql))
+#         seikyus = [{'customer_id':d[0], 'deliver_ymd': d[1], 'item_id': d[2],
+#                   'price': d[3], 'price_sub': d[4], 'quantity': d[5], 'user_id': current_user.name, 'ymdt': d[7], 'tenant_id': current_user.tenant_id} for d in data_list]
                   
-        db.session.execute(Seikyu.__table__.insert(), seikyus)
-        db.session.commit()
+#         db.session.execute(Seikyu.__table__.insert(), seikyus)
+#         db.session.commit()
   
-  if blAri :
-    return str(customerid)
-  else :
-    return "-1"
+#   if blAri :
+#     return str(customerid)
+#   else :
+#     return "-1"
   
-def isDate(year,month,day):
-    try:
-        newDataStr="%04d/%02d/%02d"%(year,month,day)
-        newDate=datetime.datetime.strptime(newDataStr,"%Y/%m/%d")
-        return True
-    except ValueError:
-        return False
+# def isDate(year,month,day):
+#     try:
+#         newDataStr="%04d/%02d/%02d"%(year,month,day)
+#         newDate=datetime.datetime.strptime(newDataStr,"%Y/%m/%d")
+#         return True
+#     except ValueError:
+#         return False
 
 
-def TableWhereTenantId(table_nm):
-  return " (select * from " + table_nm + " where tenant_id = '" + current_user.tenant_id + "') "
+# def TableWhereTenantId(table_nm):
+#   return " (select * from " + table_nm + " where tenant_id = '" + current_user.tenant_id + "') "
 
 
 
-@app.route('/printSeikyu/<customerid>/<customeridB>/<nentuki>/<randnum>')
-@login_required
-def resPdf_printSeikyu(customerid, customeridB, nentuki, randnum):
-  # 
-  sql = ""
-  sql = sql + "  SELECT to_char(seikyu.deliver_ymd,'yyyy')        nen,                                                                                  " 
-  sql = sql + "         to_char(seikyu.deliver_ymd,'mm')         tuki,                                                                                   " 
-  sql = sql + "         seikyu.customer_id,                                                                                                             " 
-  sql = sql + "         seikyu.deliver_ymd,                                                                                                             " 
-  sql = sql + "         seikyu.item_id,                                                                                                                 " 
-  sql = sql + "         seikyu.price,                                                                                                                   " 
-  sql = sql + "         seikyu.quantity,                                                                                                                " 
-  sql = sql + "         item.code                               item_code,                                                                              " 
-  sql = sql + "         item.name1                              item_name1,                                                                             " 
-  sql = sql + "         item.name2                              item_name2,                                                                             " 
-  sql = sql + "         customer.name1                          customer_name1,                                                                         " 
-  sql = sql + "         customer.name2                          customer_name2,                                                                         " 
-  sql = sql + "         customer.list,                                                                                                                  " 
-  sql = sql + "         customer.group_id,                                                                                                              " 
-  sql = sql + "         to_char(seikyu.deliver_ymd,'yyyy') || to_char(seikyu.deliver_ymd,'mm') || lpad(seikyu.customer_id::text,6,0::text) SEIKYU_KEY,  " 
-  sql = sql + "         customer.harai_kb ,                                                                                                             " 
-  sql = sql + "         customer.biko2 zei_kb                                                                                                           " 
-  sql = sql + "  FROM   " + TableWhereTenantId("seikyu") + " seikyu                                                                                     " 
-  sql = sql + "  inner join " + TableWhereTenantId("item") + " item                                                                                     " 
-  sql = sql + "  on                                                                                                                                     " 
-  sql = sql + "      seikyu.item_id = item.id                                                                                                           " 
-  sql = sql + "  inner join " + TableWhereTenantId("customer") + " customer                                                                             " 
-  sql = sql + "  on                                                                                                                                     " 
-  sql = sql + "      seikyu.customer_id = customer.id                                                                                                   " 
-  sql = sql + "  where                                                                                                                                  " 
-  sql = sql + "       to_char(seikyu.deliver_ymd,'yyyy') = '" + nentuki[0:4] + "' and                                                                   " 
-  sql = sql + "       to_char(seikyu.deliver_ymd,'mm') = '" + nentuki[4:6] + "' and                                                                     " 
-  sql = sql + "       seikyu.customer_id = V_CUSTOMER_ID_V and                                                                                       " 
-  sql = sql + "       list IS NOT NULL                                                                                                                  " 
-  sql = sql + "  ORDER  BY to_char(seikyu.deliver_ymd,'yyyy'),                                                                                          " 
-  sql = sql + "            to_char(seikyu.deliver_ymd,'mm'),                                                                                            " 
-  sql = sql + "            customer.list,                                                                                                               " 
-  sql = sql + "            seikyu.customer_id,                                                                                                          " 
-  sql = sql + "            seikyu.item_id,                                                                                                              " 
-  sql = sql + "            seikyu.deliver_ymd;                                                                                                          " 
+# @app.route('/printSeikyu/<customerid>/<customeridB>/<nentuki>/<randnum>')
+# @login_required
+# def resPdf_printSeikyu(customerid, customeridB, nentuki, randnum):
+#   # 
+#   sql = ""
+#   sql = sql + "  SELECT to_char(seikyu.deliver_ymd,'yyyy')        nen,                                                                                  " 
+#   sql = sql + "         to_char(seikyu.deliver_ymd,'mm')         tuki,                                                                                   " 
+#   sql = sql + "         seikyu.customer_id,                                                                                                             " 
+#   sql = sql + "         seikyu.deliver_ymd,                                                                                                             " 
+#   sql = sql + "         seikyu.item_id,                                                                                                                 " 
+#   sql = sql + "         seikyu.price,                                                                                                                   " 
+#   sql = sql + "         seikyu.quantity,                                                                                                                " 
+#   sql = sql + "         item.code                               item_code,                                                                              " 
+#   sql = sql + "         item.name1                              item_name1,                                                                             " 
+#   sql = sql + "         item.name2                              item_name2,                                                                             " 
+#   sql = sql + "         customer.name1                          customer_name1,                                                                         " 
+#   sql = sql + "         customer.name2                          customer_name2,                                                                         " 
+#   sql = sql + "         customer.list,                                                                                                                  " 
+#   sql = sql + "         customer.group_id,                                                                                                              " 
+#   sql = sql + "         to_char(seikyu.deliver_ymd,'yyyy') || to_char(seikyu.deliver_ymd,'mm') || lpad(seikyu.customer_id::text,6,0::text) SEIKYU_KEY,  " 
+#   sql = sql + "         customer.harai_kb ,                                                                                                             " 
+#   sql = sql + "         customer.biko2 zei_kb                                                                                                           " 
+#   sql = sql + "  FROM   " + TableWhereTenantId("seikyu") + " seikyu                                                                                     " 
+#   sql = sql + "  inner join " + TableWhereTenantId("item") + " item                                                                                     " 
+#   sql = sql + "  on                                                                                                                                     " 
+#   sql = sql + "      seikyu.item_id = item.id                                                                                                           " 
+#   sql = sql + "  inner join " + TableWhereTenantId("customer") + " customer                                                                             " 
+#   sql = sql + "  on                                                                                                                                     " 
+#   sql = sql + "      seikyu.customer_id = customer.id                                                                                                   " 
+#   sql = sql + "  where                                                                                                                                  " 
+#   sql = sql + "       to_char(seikyu.deliver_ymd,'yyyy') = '" + nentuki[0:4] + "' and                                                                   " 
+#   sql = sql + "       to_char(seikyu.deliver_ymd,'mm') = '" + nentuki[4:6] + "' and                                                                     " 
+#   sql = sql + "       seikyu.customer_id = V_CUSTOMER_ID_V and                                                                                       " 
+#   sql = sql + "       list IS NOT NULL                                                                                                                  " 
+#   sql = sql + "  ORDER  BY to_char(seikyu.deliver_ymd,'yyyy'),                                                                                          " 
+#   sql = sql + "            to_char(seikyu.deliver_ymd,'mm'),                                                                                            " 
+#   sql = sql + "            customer.list,                                                                                                               " 
+#   sql = sql + "            seikyu.customer_id,                                                                                                          " 
+#   sql = sql + "            seikyu.item_id,                                                                                                              " 
+#   sql = sql + "            seikyu.deliver_ymd;                                                                                                          " 
 
-  sqlA = sql.replace("V_CUSTOMER_ID_V",customerid)
-  sqlB = sql.replace("V_CUSTOMER_ID_V",customeridB)
-  # sql = " select * from v_seikyu_b where nen = '2021' and tuki = '02' and customer_id = " + customerid
+#   sqlA = sql.replace("V_CUSTOMER_ID_V",customerid)
+#   sqlB = sql.replace("V_CUSTOMER_ID_V",customeridB)
+#   # sql = " select * from v_seikyu_b where nen = '2021' and tuki = '02' and customer_id = " + customerid
 
-  param_list = MstSetting.query.filter(MstSetting.tenant_id==current_user.tenant_id).all()
+#   param_list = MstSetting.query.filter(MstSetting.tenant_id==current_user.tenant_id).all()
 
-  if db.session.execute(text(sqlA)).fetchone() is not None:
-    data_listA = db.session.execute(text(sqlA))
+#   if db.session.execute(text(sqlA)).fetchone() is not None:
+#     data_listA = db.session.execute(text(sqlA))
 
-    if db.session.execute(text(sqlB)).fetchone() is not None:
-      data_listB = db.session.execute(text(sqlB))
-    else:
-      data_listB = None
+#     if db.session.execute(text(sqlB)).fetchone() is not None:
+#       data_listB = db.session.execute(text(sqlB))
+#     else:
+#       data_listB = None
     
-    timestamp = datetime.datetime.now()
-    timestampStr = timestamp.strftime('%Y%m%d%H%M%S%f')
-    filename = "file_" + customerid + "_" + customeridB + "_" + timestampStr + "_" + current_user.name
-    make(filename, data_listA, data_listB, param_list)
+#     timestamp = datetime.datetime.now()
+#     timestampStr = timestamp.strftime('%Y%m%d%H%M%S%f')
+#     filename = "file_" + customerid + "_" + customeridB + "_" + timestampStr + "_" + current_user.name
+#     make(filename, data_listA, data_listB, param_list)
 
-    response = make_response()
-    response.data = open("tmp/" + filename + ".pdf", "rb").read()
-    response.headers['Content-Disposition'] = "attachment; filename=unicode.pdf"
-    response.mimetype = 'application/pdf'
-    return filename + ".pdf"
-  else:
-    return "-1"
+#     response = make_response()
+#     response.data = open("tmp/" + filename + ".pdf", "rb").read()
+#     response.headers['Content-Disposition'] = "attachment; filename=unicode.pdf"
+#     response.mimetype = 'application/pdf'
+#     return filename + ".pdf"
+#   else:
+#     return "-1"
 
 
 @app.route('/binaryTest',methods=["PUT"])
 def binaryTest():
-  timestamp = datetime.datetime.now()
-  timestampStr = timestamp.strftime('%Y%m%d%H%M%S%f')
   if 'excelFile' in request.files:
     fi = request.files['excelFile']
     xl = pd.read_excel(fi, sheet_name=None)
-    # data_xls = pd.read_Excel(f)
-    dictJuchu = {}
-    for sh in xl:
-      # dictJuchu[sh]=[]
-      for row in xl[sh].itertuples():
+    fileshubetu = fileShubetu(xl)
 
-        #見出し行から列情報の辞書を作成
-        if row.Index <= 11:
-          dictJuchu[(sh, "hr" + str(row.Index+1))]=[]
-          columnId = 0
-          prevCell = ""
-          
-          for cell in row:
-            vcell = str(cell if str(cell) !="nan" else prevCell).replace( '\n' , '' )
-            dictJuchu[(sh, "hr" + str(row.Index+1))].append(vcell)
-            prevCell = vcell
-            columnId += 1
-        #データ行
-        if row.Index>=12:
-
-          columnId = 0
-          for cell in row:
-            
-            try:
-              sisetuMain = SisetuMain()
-              sisetuMain.nendo = int(row[1])
-              sisetuMain.bunrui = row[2]
-              sisetuMain.dantai_cd = row[3]
-              sisetuMain.tdfk_nm = row[4]
-              sisetuMain.city_nm = row[5]
-              sisetuMain.sheet_nm = sh
-              sisetuMain.col_key1 = dictJuchu[sh,"hr1"][columnId]
-              sisetuMain.col_key2 = dictJuchu[sh,"hr2"][columnId]
-              sisetuMain.col_key3 = dictJuchu[sh,"hr3"][columnId]
-              sisetuMain.col_key4 = dictJuchu[sh,"hr4"][columnId]
-              sisetuMain.col_key5 = dictJuchu[sh,"hr5"][columnId]
-              sisetuMain.col_key6 = dictJuchu[sh,"hr6"][columnId]
-              sisetuMain.col_key7 = dictJuchu[sh,"hr7"][columnId]
-              sisetuMain.col_key8 = dictJuchu[sh,"hr8"][columnId]
-              sisetuMain.col_key9 = dictJuchu[sh,"hr9"][columnId]
-              sisetuMain.col_key10 = dictJuchu[sh,"hr10"][columnId]
-              sisetuMain.col_key11 = dictJuchu[sh,"hr11"][columnId]
-              sisetuMain.col_key12 = dictJuchu[sh,"hr12"][columnId]
-              sisetuMain.col_index = (columnId)
-              if isfloat(str(cell)):
-                sisetuMain.val_num = float(cell)
-              else:
-                sisetuMain.val_char = str(cell)
-              db.session.add(sisetuMain)
-              db.session.commit()
-
-            except:
-              # 何もしない
-              import traceback
-              traceback.print_exc()
-            
-            columnId += 1
-
+    if fileshubetu=="sisetu":
+      createSisetuMain(xl)
+    elif fileshubetu=="sokatu":
+      createSokatuMain(xl)
+      pass
+    else:
+      pass
 
   return "1"
   # return send_file("tmp/" + timestampStr + ".pdf", as_attachment=True)
+
+def fileShubetu(xlfile):
+  for sh in xlfile:
+    if xlfile[sh].columns[0] == "経年比較表（公共施設状況調）" :
+      return "sisetu"
+    elif "財政状況資料集" in xlfile[sh].columns[1] :
+      return "sokatu"
+    else:
+      for row in xlfile[sh].itertuples():
+          for cell in row:
+            a = cell
+            b = a
+  return "1"
+
+def createSokatuMain(xl):
+  tokubetuShoku = ["知事","副知事","教育長","議会議長","議会副議長","議会議員"]
+  ippanShoku = ["一般職員","うち消防職員","うち技能労務職員","警察官","教育公務員","臨時職員","合計"]
+
+  timestamp = datetime.datetime.now()
+  timestampStr = timestamp.strftime('%Y%m%d%H%M%S%f')
+  dictData = {}
+  for sh in xl:
+    for row in xl[sh].itertuples():
+      dictData[(sh + str(row.Index+2))]=[]
+      for cell in row:
+        if str(cell) != "nan":
+          dictData[(sh + str(row.Index+2))].append(str(cell).replace( '\n' , '' ))
+
+  kokuChoCount = 0
+  jukiJinkoCount = 0
+  for rowid in dictData:
+    for val in dictData[rowid]:
+      if val in tokubetuShoku:
+        dictData[rowid].insert(dictData[rowid].index(val)+2,val + "_給料額")
+        tokubetuShoku.remove(val)
+      elif "年国調" in val:
+        if kokuChoCount==0:
+          dictData[rowid][dictData[rowid].index(val)] = "人口_国勢調査_前回"
+          kokuChoCount = 1
+        else:
+          dictData[rowid][dictData[rowid].index(val)] = "人口_国勢調査_前々回"
+      elif isJukiJinko(val):
+        if jukiJinkoCount == 0:
+          dictData[rowid][dictData[rowid].index(val)] = "人口_住基台帳_当年度"
+          jukiJinkoCount = 1
+        else:
+          dictData[rowid][dictData[rowid].index(val)] = "人口_住基台帳_前年度"
+        # try:
+        #   sisetuMain = SisetuMain()
+        #   if isfloat(str(cell)):
+        #     sisetuMain.val_num = float(cell)
+        #   else:
+        #     sisetuMain.val_char = str(cell)
+        #   # db.session.add(sisetuMain)
+        #   # db.session.commit()
+
+        # except:
+        #   # 何もしない
+        #   import traceback
+        #   traceback.print_exc()
+  # tdfkCd = tdfkCodeByName(tdfkNm)
+  nendo = seireki(dictData["総括表3"][5])
+  dictInsData = {}
+  for rowid in dictData:
+    for val in dictData[rowid]:
+      if isfloat(str(val)):
+        pass
+      else:
+        tmp = findPair(dictData, val)
+        if tmp[1] != "" and tmp[0] != "-" :
+          dictInsData[tmp[0]] = tmp[1]
+          
+      a = 1
+      b = a
+
+  colIndex = 1
+  for rowid in dictInsData:
+    try:
+      sisetuMain = SisetuMain()
+      sisetuMain.nendo = nendo
+      sisetuMain.bunrui = ""
+      sisetuMain.dantai_cd =tdfkCodeByName(dictInsData["都道府県名"])
+      sisetuMain.tdfk_nm = dictInsData["都道府県名"]
+      sisetuMain.city_nm = dictInsData["都道府県名"]
+      sisetuMain.sheet_nm = "test"
+      sisetuMain.col_key1 = rowid
+      sisetuMain.col_key2 = rowid
+      colIndex = getColIndex(sisetuMain, colIndex)
+      sisetuMain.col_index = colIndex
+      cell = str(dictInsData[rowid])
+      if isfloat(cell):
+        sisetuMain.val_num = float(cell)
+      else:
+        sisetuMain.val_char = str(cell)
+      db.session.add(sisetuMain)
+      db.session.commit()
+
+    except:
+      # 何もしない
+      import traceback
+      traceback.print_exc()
+          
+    colIndex += 1
+
+  a = "1"
+  b = a
+  pass
+  # for key in dictData:
+  #     for row in dictData[key]:
+  #       a = row
+  #       b = a
+  #       # columnId += 1
+
+
+def isJukiJinko(key):
+  tmp = key.split(".")
+  if len(tmp)==3:
+    return True
+    # if isfloat(tmp[0]) and isfloat(tmp[1]) and isfloat(tmp[2]):
+    #   if "(人)" in tmp[3]:
+    #     return True
+
+def getColIndex(sisetuMain, colIndex):
+  
+    datalist = db.session.query(db.func.max(SisetuMain.col_index).label("col_index")).filter( 
+      SisetuMain.sheet_nm==sisetuMain.sheet_nm,
+      SisetuMain.col_key1==sisetuMain.col_key1,
+      SisetuMain.col_key2==sisetuMain.col_key2,
+      SisetuMain.col_key3==sisetuMain.col_key3,
+      SisetuMain.col_key4==sisetuMain.col_key4,
+      SisetuMain.col_key5==sisetuMain.col_key5,
+      SisetuMain.col_key6==sisetuMain.col_key6,
+      SisetuMain.col_key7==sisetuMain.col_key7).all()
+    if datalist[0].col_index == None:
+      return colIndex
+    else:
+      return datalist[0].col_index
+
+
+def tdfkCodeByName(tdfkName):
+  cd = [k for k, v in tdfk.items() if v == tdfkName]
+  return cd[0] + "0000"
+
+
+def findPair(dictData, targetKey):
+  find = False #発見フラグ
+  for rowid in dictData:
+    if find:
+      return ["",""] #発見済みなのに次の行を見に行くのは最後列ということなので抜ける（キー：バリューの最後のバリュー）
+
+    for val in dictData[rowid]:
+      if val==targetKey:
+        find=True
+      else:
+        if find:
+          if isfloat(val) or val=="-" or (val in str(tdfk.values())):
+            return [targetKey, val]
+          else:
+            return ["", ""]
+        else:
+          continue
+            # if targetKey in tokubetuShoku :
+            #   return [targetKey + "_定数", val]
+            # elif targetKey in ippanShoku :
+            #   return [targetKey + "_職員数", val]
+            # else:
+            #   return [targetKey, val]
+
+def createSisetuMain(xl):
+  timestamp = datetime.datetime.now()
+  timestampStr = timestamp.strftime('%Y%m%d%H%M%S%f')
+  dictJuchu = {}
+  for sh in xl:
+    for row in xl[sh].itertuples():
+
+      if row.Index <= 11:
+        dictJuchu[(sh, "hr" + str(row.Index+1))]=[]
+        columnId = 0
+        prevCell = ""
+        
+        for cell in row:
+          vcell = str(cell if str(cell) !="nan" else prevCell).replace( '\n' , '' )
+          dictJuchu[(sh, "hr" + str(row.Index+1))].append(vcell)
+          prevCell = vcell
+          columnId += 1
+      #データ行
+      if row.Index>=12:
+
+        columnId = 0
+        for cell in row:
+          
+          try:
+            sisetuMain = SisetuMain()
+            sisetuMain.nendo = int(row[1])
+            sisetuMain.bunrui = row[2]
+            sisetuMain.dantai_cd = row[3]
+            sisetuMain.tdfk_nm = row[4]
+            sisetuMain.city_nm = row[5]
+            sisetuMain.sheet_nm = sh
+            sisetuMain.col_key1 = dictJuchu[sh,"hr1"][columnId]
+            sisetuMain.col_key2 = dictJuchu[sh,"hr2"][columnId]
+            sisetuMain.col_key3 = dictJuchu[sh,"hr3"][columnId]
+            sisetuMain.col_key4 = dictJuchu[sh,"hr4"][columnId]
+            sisetuMain.col_key5 = dictJuchu[sh,"hr5"][columnId]
+            sisetuMain.col_key6 = dictJuchu[sh,"hr6"][columnId]
+            sisetuMain.col_key7 = dictJuchu[sh,"hr7"][columnId]
+            sisetuMain.col_key8 = dictJuchu[sh,"hr8"][columnId]
+            sisetuMain.col_key9 = dictJuchu[sh,"hr9"][columnId]
+            sisetuMain.col_key10 = dictJuchu[sh,"hr10"][columnId]
+            sisetuMain.col_key11 = dictJuchu[sh,"hr11"][columnId]
+            sisetuMain.col_key12 = dictJuchu[sh,"hr12"][columnId]
+            sisetuMain.col_index = (columnId)
+            if isfloat(str(cell)):
+              sisetuMain.val_num = float(cell)
+            else:
+              sisetuMain.val_char = str(cell)
+            db.session.add(sisetuMain)
+            db.session.commit()
+
+          except:
+            # 何もしない
+            import traceback
+            traceback.print_exc()
+          
+          columnId += 1
+
+
 
         
 def isfloat(strval):
@@ -472,6 +662,36 @@ def null2blank(val):
   else:
     return val
 
+def seireki(wareki):
+  str = wareki
+  word = str.split('年度')  # +以前と以降で分割
+  year = word[0]  # +以前の値以外いらないので前半のみ格納
+  # year = year[:-1]  # 入力値の末尾の年を削除
+
+  jp_cal = ["明治", "大正", "昭和", "平成", "令和"]
+  # 明治 1868~1911(1912),大正1912~1925(1926),昭和1926~1988(1989),平成1989~2018,令和2019~
+  ad = 0  # 和暦->西暦変換した時の西暦を表す変数
+  jp = year[:2]  # 年号部分の切り出し
+  yy = year[2:]  # 年部分の切り出し
+
+  # 年号によってadに値を入れていく
+  if jp == jp_cal[0]:
+      ad += 1868
+  elif jp == jp_cal[1]:
+      ad += 1912
+  elif jp == jp_cal[2]:
+      ad += 1926
+  elif jp == jp_cal[3]:
+      ad += 1989
+  elif jp == jp_cal[4]:
+      ad += 2019
+
+  # 元年でないならば、その値-1(元年が1年であるため)をadに足す
+  if yy != '元':
+      ad += int(yy)-1
+
+  return ad
+      
 
 @app.route('/getCityListByTdfkCd/<tdfkCd>')
 def getCityListByTdfkCd(tdfkCd):
@@ -483,14 +703,17 @@ def getCityListByTdfkCd(tdfkCd):
 @app.route('/getFullRecordByDantaiCd/<cityCd>')
 def getFullRecordByDantaiCd(cityCd):
     nendos = [2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019]
-    datalist = SisetuMain.query.filter(SisetuMain.col_index >= 6, 
+    datalist = SisetuMain.query.filter( 
     SisetuMain.dantai_cd==cityCd, SisetuMain.nendo.in_(nendos)).order_by(asc(SisetuMain.sheet_nm), 
     asc(SisetuMain.col_index), 
     asc(SisetuMain.nendo)).all()
     datalist_schema = SisetuMainSchema(many=True)
-    return jsonify({'data': datalist_schema.dumps(datalist, ensure_ascii=False)})
+    return jsonify({'data': datalist_schema.dumps(datalist, ensure_ascii=False, default=decimal_default_proc)})
 
-
+def decimal_default_proc(obj):
+    if isinstance(obj, Decimal):
+        return float(obj)
+    raise TypeError
 
 
 @app.route('/getCsvData/<viewnm>/<nentuki>/<groupkb>/<tanto>')
