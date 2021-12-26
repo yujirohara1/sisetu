@@ -402,9 +402,20 @@ def favicon():
 
 @app.route('/binaryTest',methods=["PUT"])
 def binaryTest():
-  if 'excelFile' in request.files:
-    fi = request.files['excelFile']
-    xl = pd.read_excel(fi, sheet_name=None)
+  res = requests.get("https://www.soumu.go.jp/iken/zaisei/jyoukyou_shiryou/r01/index.html")
+  soup = BeautifulSoup(res.text, 'html.parser')
+  result = soup.select("a[href]")
+  link_list =[]
+  for link in result:
+    href = link.get("href")
+    link_list.append(href)
+    xl_list = [temp for temp in link_list if temp.endswith('xlsx')]
+
+  for xlfile in xl_list:
+    # fi = request.files['excelFile']
+    res = requests.get("https://www.soumu.go.jp" + xlfile)
+    # xl = pd.read_excel(fi, sheet_name=None)
+    xl = pd.read_excel(res.content, sheet_name=None)
     fileshubetu = fileShubetu(xl)
 
     if fileshubetu=="sisetu":
@@ -479,7 +490,12 @@ def createSokatuMain(xl):
         #   import traceback
         #   traceback.print_exc()
   # tdfkCd = tdfkCodeByName(tdfkNm)
-  nendo = seireki(dictData["総括表3"][5])
+  try:
+    nendo = seireki(dictData["総括表3"][5])
+  except:
+    import traceback
+    traceback.print_exc()
+
   dictInsData = {}
   try:
     for rowid in dictData:
@@ -499,24 +515,25 @@ def createSokatuMain(xl):
   colIndex = 1
   for rowid in dictInsData:
     try:
-      sisetuMain = SisetuMain()
-      sisetuMain.nendo = nendo
-      sisetuMain.bunrui = ""
-      sisetuMain.dantai_cd =tdfkCodeByName(dictInsData["都道府県名"])
-      sisetuMain.tdfk_nm = dictInsData["都道府県名"]
-      sisetuMain.city_nm = dictInsData["都道府県名"]
-      sisetuMain.sheet_nm = "test"
-      sisetuMain.col_key1 = rowid
-      sisetuMain.col_key2 = rowid
-      colIndex = getColIndex(sisetuMain, colIndex)
-      sisetuMain.col_index = colIndex
-      cell = str(dictInsData[rowid])
-      if isfloat(cell):
-        sisetuMain.val_num = float(cell)
-      else:
-        sisetuMain.val_char = str(cell)
-      db.session.add(sisetuMain)
-      db.session.commit()
+      if colIndex <= 63:
+        sisetuMain = SisetuMain()
+        sisetuMain.nendo = nendo
+        sisetuMain.bunrui = ""
+        sisetuMain.dantai_cd =tdfkCodeByName(dictInsData["都道府県名"])
+        sisetuMain.tdfk_nm = dictInsData["都道府県名"]
+        sisetuMain.city_nm = dictInsData["都道府県名"]
+        sisetuMain.sheet_nm = "test"
+        sisetuMain.col_key1 = rowid
+        sisetuMain.col_key2 = rowid
+        colIndex = getColIndex(sisetuMain, colIndex)
+        sisetuMain.col_index = colIndex
+        cell = str(dictInsData[rowid])
+        if isfloat(cell):
+          sisetuMain.val_num = float(cell)
+        else:
+          sisetuMain.val_char = str(cell)
+        db.session.add(sisetuMain)
+        db.session.commit()
 
     except:
       # 何もしない
