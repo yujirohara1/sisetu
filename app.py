@@ -18,6 +18,7 @@ from marshmallow_sqlalchemy import ModelSchema
 # from reportlab.lib import colors
 from api.database import db, ma
 from models.sisetumain import SisetuMain, SisetuMainSchema, VCity, VCitySchema
+from models.jotai import Jotai, JotaiSchema
 from sqlalchemy.sql import text
 from sqlalchemy import distinct
 from sqlalchemy import desc
@@ -400,21 +401,18 @@ def favicon():
 #     return "-1"
 
 
-@app.route('/binaryTest',methods=["PUT"])
-def binaryTest():
-  res = requests.get("https://www.soumu.go.jp/iken/zaisei/jyoukyou_shiryou/r01/index.html")
-  soup = BeautifulSoup(res.text, 'html.parser')
-  result = soup.select("a[href]")
-  link_list =[]
-  for link in result:
-    href = link.get("href")
-    link_list.append(href)
-    xl_list = [temp for temp in link_list if temp.endswith('xlsx')]
+@app.route('/executeFileGetAndInsert')
+def executeFileGetAndInsert():
+  # xl = pd.read_excel(fi, sheet_name=None)
+  result = ""
+  url = request.args.to_dict()["url"]
+  documentName = request.args.to_dict()["documentName"]
+  chosaJiten = request.args.to_dict()["chosaJiten"]
+  dantaiCd = request.args.to_dict()["dantaiCd"]
+  dantaiNm = request.args.to_dict()["dantaiNm"]
 
-  for xlfile in xl_list:
-    # fi = request.files['excelFile']
-    res = requests.get("https://www.soumu.go.jp" + xlfile)
-    # xl = pd.read_excel(fi, sheet_name=None)
+  try:
+    res = requests.get(url)
     xl = pd.read_excel(res.content, sheet_name=None)
     fileshubetu = fileShubetu(xl)
 
@@ -425,6 +423,95 @@ def binaryTest():
       pass
     else:
       pass
+    
+    result = "取込済"
+  except Exception as e:
+    import traceback
+    traceback.print_exc()
+    result = e.args[0]
+
+  insertJotai(documentName, chosaJiten, dantaiCd, dantaiNm, url, result)
+
+  return jsonify({'data': {"documentName" : documentName, "chosaJiten":chosaJiten, "dantaiCd":dantaiCd, "dantaiNm":dantaiNm, "url":url, "result":result}})
+  # return send_file("tmp/" + timestampStr + ".pdf", as_attachment=True)
+
+
+def insertJotai(document_name, chosa_jiten, dantai_cd, dantai_nm, file_url, jotai_message):
+  jotai = Jotai()
+  jotai.document_name = document_name
+  jotai.chosa_jiten = chosa_jiten
+  jotai.dantai_cd = dantai_cd
+  jotai.dantai_nm = dantai_nm
+  jotai.file_url = file_url
+  jotai.jotai_message = jotai_message
+  jotai.ymdt = datetime.datetime.now()
+  db.session.add(jotai)
+  
+  db.session.commit()
+  return "1"
+# 
+
+@app.route('/executeFileCollect',methods=["GET"])
+def executeFileCollect():
+  link_list =[]
+  for nen in ["h22","h23","h24","h25","h26","h27","h28","h29","h30", "r01"]:
+    res = requests.get("https://www.soumu.go.jp/iken/zaisei/jyoukyou_shiryou/" + nen + "/index.html")
+    soup = BeautifulSoup(res.content, 'html.parser')
+    result = soup.select("a[href]")
+    for link in result:
+      href = link.get("href")
+      text = link.text[1:]
+      if href.endswith('xlsx') or href.endswith('xls'):
+        tdfk = tdfkCodeByName(text)
+        if tdfk != "":
+          link_list.append({"document":"財政状況資料_都道府県", 
+                            "year":nen, 
+                            "dantai":tdfk, 
+                            "text":text, 
+                            "url" :"https://www.soumu.go.jp" + href.replace("https://www.soumu.go.jp",""),
+                            "jotai" : getJotai("財政状況資料_都道府県", nen, tdfk)})
+
+  return jsonify({'data': link_list})
+  # return send_file("tmp/" + timestampStr + ".pdf", as_attachment=True)
+
+def getJotai(document_name, chosa_jiten, dantai_cd):
+    jotailist = Jotai.query.filter(Jotai.document_name==document_name,
+      Jotai.chosa_jiten==chosa_jiten, Jotai.dantai_cd==dantai_cd).all()
+    if jotailist == None:
+      return "未取込"
+    
+    if len(jotailist) == 1:
+      return jotailist[0].jotai_message
+    else:
+      return "未取込"
+
+
+@app.route('/binaryTest',methods=["PUT"])
+def binaryTest():
+  for nen in ["h22","h23","h24","h25","h26","h27","h28","h29","h30"]:
+    res = requests.get("https://www.soumu.go.jp/iken/zaisei/jyoukyou_shiryou/" + nen + "/index.html")
+    soup = BeautifulSoup(res.text, 'html.parser')
+    result = soup.select("a[href]")
+    link_list =[]
+    for link in result:
+      href = link.get("href")
+      link_list.append(href)
+      xl_list = [temp for temp in link_list if temp.endswith('xlsx')]
+
+    for xlfile in xl_list:
+      # fi = request.files['excelFile']
+      res = requests.get("https://www.soumu.go.jp" + xlfile)
+      # xl = pd.read_excel(fi, sheet_name=None)
+      xl = pd.read_excel(res.content, sheet_name=None)
+      fileshubetu = fileShubetu(xl)
+
+      if fileshubetu=="sisetu":
+        createSisetuMain(xl)
+      elif fileshubetu=="sokatu":
+        createSokatuMain(xl)
+        pass
+      else:
+        pass
 
   return "1"
   # return send_file("tmp/" + timestampStr + ".pdf", as_attachment=True)
@@ -515,17 +602,18 @@ def createSokatuMain(xl):
   colIndex = 1
   for rowid in dictInsData:
     try:
+      # if colIndex <= 63:
+      sisetuMain = SisetuMain()
+      sisetuMain.nendo = nendo
+      sisetuMain.bunrui = ""
+      sisetuMain.dantai_cd =tdfkCodeByName(dictInsData["都道府県名"])
+      sisetuMain.tdfk_nm = dictInsData["都道府県名"]
+      sisetuMain.city_nm = dictInsData["都道府県名"]
+      sisetuMain.sheet_nm = "test"
+      sisetuMain.col_key1 = rowid
+      sisetuMain.col_key2 = rowid
+      colIndex = getColIndex(sisetuMain, colIndex)
       if colIndex <= 63:
-        sisetuMain = SisetuMain()
-        sisetuMain.nendo = nendo
-        sisetuMain.bunrui = ""
-        sisetuMain.dantai_cd =tdfkCodeByName(dictInsData["都道府県名"])
-        sisetuMain.tdfk_nm = dictInsData["都道府県名"]
-        sisetuMain.city_nm = dictInsData["都道府県名"]
-        sisetuMain.sheet_nm = "test"
-        sisetuMain.col_key1 = rowid
-        sisetuMain.col_key2 = rowid
-        colIndex = getColIndex(sisetuMain, colIndex)
         sisetuMain.col_index = colIndex
         cell = str(dictInsData[rowid])
         if isfloat(cell):
@@ -540,7 +628,7 @@ def createSokatuMain(xl):
       import traceback
       traceback.print_exc()
           
-    colIndex += 1
+    # colIndex += 1
 
   a = "1"
   b = a
@@ -576,15 +664,26 @@ def getColIndex(sisetuMain, colIndex):
       SisetuMain.col_key6==sisetuMain.col_key6,
       SisetuMain.col_key7==sisetuMain.col_key7).all()
     if datalist[0].col_index == None:
-      return colIndex
+      # 当該番号がすでに使われているかどうかを見る
+      datalist = db.session.query(db.func.max(SisetuMain.col_index).label("col_index")).filter( 
+        SisetuMain.sheet_nm==sisetuMain.sheet_nm).all()
+      if datalist[0].col_index == None:
+        return 1
+      else:
+        return datalist[0].col_index + 1
     else:
       return datalist[0].col_index
 
 
 def tdfkCodeByName(tdfkName):
-  cd = [k for k, v in tdfk.items() if v == tdfkName]
-  return cd[0] + "0000"
-
+  try:
+    cd = [k for k, v in tdfk.items() if v == tdfkName]
+    return cd[0] + "0000"
+  except:
+    # 何もしない
+    import traceback
+    traceback.print_exc()
+  return ""
 
 def findPair(dictData, targetKey):
   find = False #発見フラグ

@@ -81,3 +81,21 @@ order by
 select * from v_city;
 
 
+
+CREATE TABLE jotai (
+    document_name    character varying(40),
+    chosa_jiten      character varying(40),
+    dantai_cd        character varying(40),
+    dantai_nm        character varying(40),
+    file_url         character varying(200),
+    jotai_message    character varying(40),
+    ymdt timestamp without time zone 
+);
+
+
+ALTER TABLE ONLY jotai
+    ADD CONSTRAINT jotai_pkey PRIMARY KEY (
+       document_name  ,
+       chosa_jiten    ,
+       dantai_cd      
+    );

@@ -21,6 +21,245 @@ document.getElementById('btnFileImport').addEventListener('click', function() {
   document.getElementById('btnFileImport').classList.add("disabled");
 });
 
+document.getElementById('btnExecuteImport').addEventListener('click', function() {
+  var tablerows = document.getElementById("tableFileCollect").rows;
+    for(let i=0; i<tablerows.length; i++){
+      var chk = tablerows[Number(i)].cells[0].querySelector("input[type='checkbox']");
+      if(chk.checked){
+        var query_params = new URLSearchParams({
+          documentName:tablerows[Number(i)].cells[1].innerText,
+          chosaJiten:tablerows[Number(i)].cells[2].innerText,
+          dantaiCd:tablerows[Number(i)].cells[3].innerText,
+          dantaiNm:tablerows[Number(i)].cells[4].innerText,
+          url:tablerows[Number(i)].cells[5].innerText    // encodeURIComponent(tablerows[Number(i)].cells[5].innerText)
+        }); 
+        fetch('/executeFileGetAndInsert?' + query_params)
+        .then(res => res.json())
+        .then(jsonData => {
+          updateJotaiResult(jsonData.data);
+          //CreateFileCollectTable(jsonData.data);
+        })
+        .catch(error => { 
+          console.log(error); 
+        });
+        break;
+      }
+    }
+});
+
+function updateJotaiResult(resultJson){
+  var tablerows = document.getElementById("tableFileCollect").rows;
+    for(let i=0; i<tablerows.length; i++){
+      if (tablerows[i].cells[1].innerText == resultJson.documentName &&
+        tablerows[i].cells[2].innerText == resultJson.chosaJiten &&
+        tablerows[i].cells[3].innerText == resultJson.dantaiCd){
+          tablerows[i].cells[6].innerText = resultJson.result;
+        }
+    }
+
+}
+
+document.getElementById('btnExecuteCollect').addEventListener('click', function() {
+  fetch('/executeFileCollect', {
+    method: 'GET',
+  })
+  .then(res => res.json())
+  .then(jsonData => {
+    CreateFileCollectTable(jsonData.data);
+  })
+  .catch(error => { 
+    console.log(error); 
+  });
+  
+  document.getElementById('btnFileImport').classList.add("disabled");
+});
+
+
+
+
+function CreateFileCollectTable(datalist){
+  var tableDiv = document.getElementById("tableFileCollectDiv");
+  while(tableDiv.lastChild){
+    tableDiv.removeChild(tableDiv.lastChild);
+  }
+
+  let table = document.createElement("table");
+  let thead = document.createElement('thead');
+  let tbody = document.createElement('tbody');
+
+
+  var trow = document.createElement('tr');
+
+  let tdataA = document.createElement('th');
+  var chk = document.createElement("input");
+  chk.type="checkbox";
+  tdataA.appendChild(chk);
+  let tdataB = document.createElement('th');
+  tdataB.innerText = "資料の種類";
+  let tdataC = document.createElement('th');
+  tdataC.innerText = "調査時点";
+  let tdataD = document.createElement('th');
+  tdataD.innerText = "団体コード";
+  let tdataE = document.createElement('th');
+  tdataE.innerText = "団体名";
+  let tdataF = document.createElement('th');
+  tdataF.innerText = "ファイルURL";
+  let tdataG = document.createElement('th');
+  tdataG.innerText = "状態";
+  trow.appendChild(tdataA);
+  trow.appendChild(tdataB);
+  trow.appendChild(tdataC);
+  trow.appendChild(tdataD);
+  trow.appendChild(tdataE);
+  trow.appendChild(tdataF);
+  trow.appendChild(tdataG);
+  thead.appendChild(trow);
+
+
+  for(let i in datalist){
+    var trow = document.createElement('tr');
+
+    let tdataA = document.createElement('td');
+    var chk = document.createElement("input");
+    chk.type="checkbox";
+    tdataA.appendChild(chk);
+
+    let tdataB = document.createElement('td');
+    tdataB.innerText = datalist[i].document;
+    let tdataC = document.createElement('td');
+    tdataC.innerText = datalist[i].year;
+    let tdataD = document.createElement('td');
+    tdataD.innerText = datalist[i].dantai;
+    let tdataE = document.createElement('td');
+    tdataE.innerText = datalist[i].text;
+    let tdataF = document.createElement('td');
+    tdataF.innerText = datalist[i].url;
+    let tdataG = document.createElement('td');
+    tdataG.innerText = datalist[i].jotai;
+
+    trow.appendChild(tdataA);
+    trow.appendChild(tdataB);
+    trow.appendChild(tdataC);
+    trow.appendChild(tdataD);
+    trow.appendChild(tdataE);
+    trow.appendChild(tdataF);
+    trow.appendChild(tdataG);
+    tbody.appendChild(trow);
+  }
+
+  // thead.appendChild(createHeader(datalist));
+
+  // var lastIndex = -1;
+  // var blAddRow = false;
+  // trow = document.createElement('tr');
+  // let tdataVal = document.createElement('td');
+  // for(let i in datalist){
+
+  //   if(lastIndex != datalist[i].col_index){ //新しく行が始まったときにインデックスと見出し作成
+  //     let tdataA = document.createElement('td');
+  //     tdataA.innerHTML = datalist[i].col_index;
+  //     trow.appendChild(tdataA);
+  
+  //     let tdataB = document.createElement('td');
+  //     tdataB.innerHTML = formatCategory1(datalist[i].col_key1);
+  //     //trow.appendChild(tdataB);
+  
+  //     let tdataC = document.createElement('td');
+  //     tdataC.innerHTML = formatCategory2(datalist[i].col_key2);
+  //     trow.appendChild(tdataC);
+  
+  //     let tdataD = document.createElement('td');
+  //     tdataD.innerHTML = formatCategory3(datalist[i].col_key3);
+  //     trow.appendChild(tdataD);
+  
+  //     let tdataE = document.createElement('td');
+  //     tdataE.innerHTML = formatCategory4(datalist[i].col_key4);
+  //     trow.appendChild(tdataE);
+  
+  //     let tdataF = document.createElement('td');
+  //     tdataF.innerHTML = formatCategory5(datalist[i].col_key5);
+  //     trow.appendChild(tdataF);
+      
+  //     let tdataG = document.createElement('td');
+  //     tdataG.innerHTML = formatCategory6(datalist[i].col_key6, datalist[i]);
+  //     trow.appendChild(tdataG);
+      
+  //     let tdataH = document.createElement('td');
+  //     tdataH.innerHTML = formatCategory7(datalist[i].col_key7, datalist[i]);
+  //     trow.appendChild(tdataH);
+  //   }
+
+
+  //   let tdataVal = document.createElement('td');
+  //   tdataVal.innerHTML = formatCategoryValue(datalist[i].val_num);
+  //   tdataVal.classList.add("text-end"); //
+  //   trow.appendChild(tdataVal);
+    
+  //   if(IsSameTR_NextRow(datalist, i)){
+  //     ; //継続
+  //   } else {
+  //     //row_selected
+  //     trow.addEventListener('click', (event) => {
+  //       var rowindex = Number(event.srcElement.parentElement.cells[0].innerText);
+  //       var valueArray = datalist.filter(value => value["col_index"] ==rowindex).map(item => item["val_num"]);
+  //       var valueMax = Math.max.apply(null, valueArray);
+  //       var valueMin = Math.min.apply(null, valueArray);
+  //       if(valueMax == 0 && valueMin == 0){
+  //         return;
+  //       }
+  //       // $("#tableCustomer").removeClass('row_selected customer');        
+  //       // $("#tableCustomer tbody tr").removeClass('row_selected customer');        
+  //       // $("#tableCustomer tbody td").removeClass('row_selected customer');        
+  //       // $(event.target.parentNode).addClass('row_selected customer');
+  //       event.srcElement.parentElement.classList.add("row_selected");
+  //       // if (objChart1) {
+  //       //   objChart1.destroy();
+  //       // }
+  //       var title = getSelectedTdfkNm() + " " + getSelectedCityNm() 
+  //         + "     "
+  //         + "(" + rowindex + ") " 
+  //         + event.srcElement.parentElement.cells[1].innerText + " / "
+  //         + event.srcElement.parentElement.cells[2].innerText + " / "
+  //         + event.srcElement.parentElement.cells[3].innerText + " / "
+  //         + event.srcElement.parentElement.cells[4].innerText + " / "
+  //         + event.srcElement.parentElement.cells[5].innerText ;
+
+  //       let graphs = document.querySelectorAll("[id^='canvasChart']"); //' #divGraphArea *');
+  //       for(let i in graphs){
+  //         if(graphs[i].title == title){
+  //           graphs[i].style.backgroundColor="rgba(255, 99, 132, 0.2)";
+  //           graphs[i].style.opacity = "0.5";
+  //           setTimeout(function(){
+  //             graphs[i].style.backgroundColor = "";
+  //             graphs[i].style.opacity = "";
+  //           },100);
+  //           return;
+  //         }
+  //       }
+  //       var graphId = createGraphArea(rowindex);
+  //       createGraphTest(datalist, rowindex, graphId, title);
+
+  //     });
+  //     tbody.appendChild(trow);
+  //     trow = document.createElement('tr');
+  //   }
+  //   lastIndex = datalist[i].col_index;
+
+  // }
+  table.appendChild(thead);
+  table.appendChild(tbody);
+  table.classList.add("table");
+  table.classList.add("table-bordered");
+  table.classList.add("table_sticky");
+  table.classList.add("table-hover");
+  table.classList.add("fs-7"); //text-end
+  table.id = "tableFileCollect";
+  document.getElementById('tableFileCollectDiv').appendChild(table);
+  //table = new DataTable(mainTable);
+  
+}
+
+
 
 
 
@@ -270,6 +509,10 @@ function IsSameTR_NextRow(datalist, i){
 }
 
 
+function openHikakuModal(rowindex){
+  alert(rowindex)
+}
+
 function destroyGraph(key, rowindex){
   var id = key.split("_")[0]
   let graphDiv = document.querySelector("#" + id); 
@@ -302,24 +545,43 @@ function createGraphArea(rowindex){
 
   //var tmpSpan = document.createElement("span");
   //tmpSpan.innerHTML = getSelectedTdfkNm() + " " + getSelectedCityNm();
-  var spanBadge = document.createElement("span");
-  spanBadge.innerText = "消去";
-  spanBadge.classList.add("badge"); // rounded-pill bg-primary
-  spanBadge.classList.add("rounded-pill"); //  bg-primary
-  spanBadge.classList.add("bg-primary"); //  text-end
-  spanBadge.classList.add("text-end"); //  
-  spanBadge.classList.add("badge-clickable"); //
-  spanBadge.id = "divGraphArea" + (max+1) + "_deleteBtn";
-  spanBadge.addEventListener('click', function() {
-    destroyGraph(spanBadge.id, rowindex);
+  var spanBadge1 = document.createElement("span");
+  spanBadge1.innerText = "消去";
+  spanBadge1.classList.add("badge"); // rounded-pill bg-primary
+  spanBadge1.classList.add("rounded-pill"); //  bg-primary
+  spanBadge1.classList.add("bg-primary"); //  text-end
+  spanBadge1.classList.add("text-end"); //  
+  spanBadge1.classList.add("badge-clickable"); //
+  spanBadge1.id = "divGraphArea" + (max+1) + "_deleteBtn";
+  spanBadge1.addEventListener('click', function() {
+    destroyGraph(spanBadge1.id, rowindex);
   });
 
 
+  //var tmpSpan = document.createElement("span");
+  //tmpSpan.innerHTML = getSelectedTdfkNm() + " " + getSelectedCityNm();
+  var spanBadge2 = document.createElement("span");
+  spanBadge2.innerText = "比較";
+  spanBadge2.classList.add("badge"); // rounded-pill bg-primary
+  spanBadge2.classList.add("rounded-pill"); //  bg-primary
+  spanBadge2.classList.add("bg-primary"); //  text-end
+  spanBadge2.classList.add("text-end"); //  
+  spanBadge2.classList.add("badge-clickable"); //
+  spanBadge2.id = "divGraphArea" + (max+1) + "_shosaiBtn";
+  spanBadge2.addEventListener('click', function() {
+    openHikakuModal(rowindex);
+  });
+
+  
+  var sep = document.createElement("span");
+  sep.innerText = " ";
   var tmpDivArea = document.createElement("div");
   tmpDivArea.classList.add("col-4");
   tmpDivArea.id = "divGraphArea" + (max+1);
   document.getElementById("divGraphRow1").appendChild(tmpDivArea);
-  tmpDivArea.appendChild(spanBadge);
+  tmpDivArea.appendChild(spanBadge1);
+  tmpDivArea.appendChild(sep);
+  tmpDivArea.appendChild(spanBadge2);
 
   tmpCanvas = document.createElement("canvas");
   tmpCanvas.id = "canvasChart" + (max+1);

@@ -28,12 +28,22 @@
 
 <!-- Modal -->
 %div.modal.fade#modalExcelUpload(data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="modalExcelUploadLabel" aria-hidden="true")
-  %div.modal-dialog.modal-dialog-centered.modal-dialog-scrollable
+  %div.modal-dialog.modal-dialog-centered.modal-dialog-scrollable.modal-xl
     %div.modal-content
       %div.modal-header
         %display-6.modal-title#modalExcelUploadLabel
-          地方財政に関する統計ファイルを指定してください。
+          地方財政に関する統計ファイルを収集してデータを取り込みます。
       %div.modal-body
+        %div.row
+          %div.col-6
+            %button.btn.btn-sm.btn-primary#btnExecuteCollect(type="button")
+              収集実行
+          %div.col-6
+            %button.btn.btn-sm.btn-primary.float-end#btnExecuteImport(type="button")
+              取込実行
+        %div.container-fluid.table-responsive#tableFileCollectDiv
+
+
         %div.input-group
           %input.form-control#inputGroupFile(type="file")
         %label.form-label#lblFileProperty
