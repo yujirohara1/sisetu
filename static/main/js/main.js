@@ -120,9 +120,6 @@ function CreateFileCollectTable(datalist){
     var trow = document.createElement('tr');
 
     let tdataA = document.createElement('td');
-    var chk = document.createElement("input");
-    chk.type="checkbox";
-    tdataA.appendChild(chk);
 
     let tdataB = document.createElement('td');
     tdataB.innerText = datalist[i].document;
@@ -136,6 +133,12 @@ function CreateFileCollectTable(datalist){
     tdataF.innerText = datalist[i].url;
     let tdataG = document.createElement('td');
     tdataG.innerText = datalist[i].jotai;
+
+    if(datalist[i].jotai == "未取込"){
+      var chk = document.createElement("input");
+      chk.type="checkbox";
+      tdataA.appendChild(chk);
+    }
 
     trow.appendChild(tdataA);
     trow.appendChild(tdataB);
