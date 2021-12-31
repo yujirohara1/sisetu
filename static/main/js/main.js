@@ -1,6 +1,7 @@
 window.onload = function(){
 
   createTdfkSelectOption();
+  createFilePatternSelectOption();
 }
 
 document.getElementById('btnFileImport').addEventListener('click', function() {
@@ -22,9 +23,12 @@ document.getElementById('btnFileImport').addEventListener('click', function() {
 });
 
 document.getElementById('btnExecuteImport').addEventListener('click', function() {
+  document.getElementById('btnExecuteCollect').classList.add("disabled");
+  document.getElementById('btnExecuteImport').classList.add("disabled");
   var tablerows = document.getElementById("tableFileCollect").rows;
-    for(let i=0; i<tablerows.length; i++){
-      var chk = tablerows[Number(i)].cells[0].querySelector("input[type='checkbox']");
+  for(let i=1; i<tablerows.length; i++){
+    var chk = tablerows[Number(i)].cells[0].querySelector("input[type='checkbox']");
+    if(chk!=null){
       if(chk.checked){
         var query_params = new URLSearchParams({
           documentName:tablerows[Number(i)].cells[1].innerText,
@@ -42,10 +46,47 @@ document.getElementById('btnExecuteImport').addEventListener('click', function()
         .catch(error => { 
           console.log(error); 
         });
-        break;
+        //break;
+        
+        tablerows[Number(i)].cells[6].classList.add("loading-ss");
+        tablerows[Number(i)].cells[6].innerText = "";
       }
     }
+  }
+  document.getElementById('btnExecuteCollect').classList.remove("disabled");
+  document.getElementById('btnExecuteImport').classList.remove("disabled");
 });
+
+// function executeFileGetAndInsert(rowIndex){
+//   var i = rowindex;
+//   var tablerows = document.getElementById("tableFileCollect").rows;
+//   var chk = tablerows[Number(i)].cells[0].querySelector("input[type='checkbox']");
+//   if(chk!=null){
+//     if(chk.checked){
+//       var query_params = new URLSearchParams({
+//         documentName:tablerows[Number(i)].cells[1].innerText,
+//         chosaJiten:tablerows[Number(i)].cells[2].innerText,
+//         dantaiCd:tablerows[Number(i)].cells[3].innerText,
+//         dantaiNm:tablerows[Number(i)].cells[4].innerText,
+//         url:tablerows[Number(i)].cells[5].innerText    // encodeURIComponent(tablerows[Number(i)].cells[5].innerText)
+//       }); 
+//       fetch('/executeFileGetAndInsert?' + query_params)
+//       .then(res => res.json())
+//       .then(jsonData => {
+//         updateJotaiResult(jsonData.data);
+//         executeFileGetAndInsert(rowIndex++);
+//       })
+//       .catch(error => { 
+//         console.log(error); 
+//       });
+//     }
+//   }
+// }
+
+// document.getElementById('btnExecuteImport').addEventListener('click', function() {
+//   executeFileGetAndInsert(1);
+// });
+
 
 function updateJotaiResult(resultJson){
   var tablerows = document.getElementById("tableFileCollect").rows;
@@ -54,25 +95,55 @@ function updateJotaiResult(resultJson){
         tablerows[i].cells[2].innerText == resultJson.chosaJiten &&
         tablerows[i].cells[3].innerText == resultJson.dantaiCd){
           tablerows[i].cells[6].innerText = resultJson.result;
+          tablerows[i].cells[6].classList.remove("loading-ss");
+          //var chk = tablerows[Number(i)].cells[0].querySelector("input[type='checkbox']");
+          tablerows[Number(i)].cells[0].innerHTML = "";
         }
     }
 
 }
 
 document.getElementById('btnExecuteCollect').addEventListener('click', function() {
-  fetch('/executeFileCollect', {
+  document.getElementById('btnExecuteCollect').classList.add("disabled");
+  var filePattern = getSelectedFilePatternNm();
+  fetch('/executeFileCollect/' + filePattern, {
     method: 'GET',
+    'Content-Type': 'application/json'
   })
   .then(res => res.json())
   .then(jsonData => {
+    AllClearTable("tableFileCollectDiv");
     CreateFileCollectTable(jsonData.data);
-  })
+    document.getElementById('btnExecuteCollect').classList.remove("disabled");
+    document.getElementById('btnExecuteImport').classList.remove("disabled");
+})
   .catch(error => { 
     console.log(error); 
   });
   
-  document.getElementById('btnFileImport').classList.add("disabled");
+  //document.getElementById('btnFileImport').classList.add("disabled");
 });
+
+
+
+
+// document.getElementById("selTdfk").addEventListener("change", function(){
+//   //AllClearGraphs();
+//   AllClearTable();
+//   val = document.getElementById("selTdfk").value;
+//   fetch('/getCityListByTdfkCd/' + val, {
+//     method: 'GET',
+//     'Content-Type': 'application/json'
+//   })
+//   .then(res => res.json())
+//   .then(jsonData => {
+//     list = JSON.parse(jsonData.data)
+//     createCitySelectOption(list);
+//     UndispLoading();
+//     return;
+//     //document.querySelector('#lblFileProperty').innerHTML = "取り込み完了！"; //jsonData.data;
+//     //document.getElementById('btnFileImport').classList.remove("disabled");
+//   })
 
 
 
@@ -93,6 +164,12 @@ function CreateFileCollectTable(datalist){
   let tdataA = document.createElement('th');
   var chk = document.createElement("input");
   chk.type="checkbox";
+  //chk.id = "chkCollectAll";
+  
+  chk.addEventListener("change", function(){
+    chk.checked = !chk.checked;
+    chkOnAllRow(chk.checked);
+  });
   tdataA.appendChild(chk);
   let tdataB = document.createElement('th');
   tdataB.innerText = "資料の種類";
@@ -150,105 +227,6 @@ function CreateFileCollectTable(datalist){
     tbody.appendChild(trow);
   }
 
-  // thead.appendChild(createHeader(datalist));
-
-  // var lastIndex = -1;
-  // var blAddRow = false;
-  // trow = document.createElement('tr');
-  // let tdataVal = document.createElement('td');
-  // for(let i in datalist){
-
-  //   if(lastIndex != datalist[i].col_index){ //新しく行が始まったときにインデックスと見出し作成
-  //     let tdataA = document.createElement('td');
-  //     tdataA.innerHTML = datalist[i].col_index;
-  //     trow.appendChild(tdataA);
-  
-  //     let tdataB = document.createElement('td');
-  //     tdataB.innerHTML = formatCategory1(datalist[i].col_key1);
-  //     //trow.appendChild(tdataB);
-  
-  //     let tdataC = document.createElement('td');
-  //     tdataC.innerHTML = formatCategory2(datalist[i].col_key2);
-  //     trow.appendChild(tdataC);
-  
-  //     let tdataD = document.createElement('td');
-  //     tdataD.innerHTML = formatCategory3(datalist[i].col_key3);
-  //     trow.appendChild(tdataD);
-  
-  //     let tdataE = document.createElement('td');
-  //     tdataE.innerHTML = formatCategory4(datalist[i].col_key4);
-  //     trow.appendChild(tdataE);
-  
-  //     let tdataF = document.createElement('td');
-  //     tdataF.innerHTML = formatCategory5(datalist[i].col_key5);
-  //     trow.appendChild(tdataF);
-      
-  //     let tdataG = document.createElement('td');
-  //     tdataG.innerHTML = formatCategory6(datalist[i].col_key6, datalist[i]);
-  //     trow.appendChild(tdataG);
-      
-  //     let tdataH = document.createElement('td');
-  //     tdataH.innerHTML = formatCategory7(datalist[i].col_key7, datalist[i]);
-  //     trow.appendChild(tdataH);
-  //   }
-
-
-  //   let tdataVal = document.createElement('td');
-  //   tdataVal.innerHTML = formatCategoryValue(datalist[i].val_num);
-  //   tdataVal.classList.add("text-end"); //
-  //   trow.appendChild(tdataVal);
-    
-  //   if(IsSameTR_NextRow(datalist, i)){
-  //     ; //継続
-  //   } else {
-  //     //row_selected
-  //     trow.addEventListener('click', (event) => {
-  //       var rowindex = Number(event.srcElement.parentElement.cells[0].innerText);
-  //       var valueArray = datalist.filter(value => value["col_index"] ==rowindex).map(item => item["val_num"]);
-  //       var valueMax = Math.max.apply(null, valueArray);
-  //       var valueMin = Math.min.apply(null, valueArray);
-  //       if(valueMax == 0 && valueMin == 0){
-  //         return;
-  //       }
-  //       // $("#tableCustomer").removeClass('row_selected customer');        
-  //       // $("#tableCustomer tbody tr").removeClass('row_selected customer');        
-  //       // $("#tableCustomer tbody td").removeClass('row_selected customer');        
-  //       // $(event.target.parentNode).addClass('row_selected customer');
-  //       event.srcElement.parentElement.classList.add("row_selected");
-  //       // if (objChart1) {
-  //       //   objChart1.destroy();
-  //       // }
-  //       var title = getSelectedTdfkNm() + " " + getSelectedCityNm() 
-  //         + "     "
-  //         + "(" + rowindex + ") " 
-  //         + event.srcElement.parentElement.cells[1].innerText + " / "
-  //         + event.srcElement.parentElement.cells[2].innerText + " / "
-  //         + event.srcElement.parentElement.cells[3].innerText + " / "
-  //         + event.srcElement.parentElement.cells[4].innerText + " / "
-  //         + event.srcElement.parentElement.cells[5].innerText ;
-
-  //       let graphs = document.querySelectorAll("[id^='canvasChart']"); //' #divGraphArea *');
-  //       for(let i in graphs){
-  //         if(graphs[i].title == title){
-  //           graphs[i].style.backgroundColor="rgba(255, 99, 132, 0.2)";
-  //           graphs[i].style.opacity = "0.5";
-  //           setTimeout(function(){
-  //             graphs[i].style.backgroundColor = "";
-  //             graphs[i].style.opacity = "";
-  //           },100);
-  //           return;
-  //         }
-  //       }
-  //       var graphId = createGraphArea(rowindex);
-  //       createGraphTest(datalist, rowindex, graphId, title);
-
-  //     });
-  //     tbody.appendChild(trow);
-  //     trow = document.createElement('tr');
-  //   }
-  //   lastIndex = datalist[i].col_index;
-
-  // }
   table.appendChild(thead);
   table.appendChild(tbody);
   table.classList.add("table");
@@ -264,18 +242,28 @@ function CreateFileCollectTable(datalist){
 
 
 
-
+function chkOnAllRow(isChecked){
+  var tablerows = document.getElementById("tableFileCollect").rows;
+  for(let i=0; i<tablerows.length; i++){
+    var chk = tablerows[Number(i)].cells[0].querySelector("input[type='checkbox']");
+    if(chk!=null){
+      chk.checked = isChecked;
+    }
+  }
+}
 
 //ファイル取り込みモーダルを起動
 //ファイルインプットタグを初期化
 //
-document.getElementById('modalExcelUpload').addEventListener('shown.bs.modal', function () {
+document.getElementById('modalExcelUpload').addEventListener('show.bs.modal', function () {
   document.getElementById('inputGroupFile').value="";
   document.getElementById("lblFileProperty").innerHTML = "";
   document.getElementById('btnFileImport').classList.add("disabled");
-  
-})
-
+  document.getElementById('btnExecuteImport').classList.add("disabled");
+  AllClearTable("tableFileCollectDiv");
+  document.getElementById('selFilePattern').selectedIndex = 0;
+  document.getElementById('btnExecuteCollect').classList.add("disabled");
+});
 
 
 
@@ -303,7 +291,7 @@ document.getElementById("inputGroupFile").addEventListener("change", function(){
 
 document.getElementById("selTdfk").addEventListener("change", function(){
   //AllClearGraphs();
-  AllClearTable();
+  AllClearTable("mainTableDiv");
   val = document.getElementById("selTdfk").value;
   fetch('/getCityListByTdfkCd/' + val, {
     method: 'GET',
@@ -330,18 +318,31 @@ function AllClearGraphs(){
   }
 }
 
-function AllClearTable(){
-  var tableDiv = document.getElementById("mainTableDiv");
+//"mainTableDiv"
+function AllClearTable(tableDivId){
+  var tableDiv = document.getElementById(tableDivId);
   while(tableDiv.lastChild){
     tableDiv.removeChild(tableDiv.lastChild);
   }
 }
 
+
+
+
+document.getElementById("selFilePattern").addEventListener("change", function(){
+  if(document.getElementById("selFilePattern").value==0){
+    document.getElementById('btnExecuteCollect').classList.add("disabled");
+  }else{
+    document.getElementById('btnExecuteCollect').classList.remove("disabled");
+  }
+});
+
+
 var datalist = null;
 
 document.getElementById("selCity").addEventListener("change", function(){
   //AllClearGraphs();
-  AllClearTable();
+  AllClearTable("mainTableDiv");
   val = document.getElementById("selCity").value;
   fetch('/getFullRecordByDantaiCd/' + val, {
     method: 'GET',
@@ -431,14 +432,7 @@ function createTable(datalist){
         if(valueMax == 0 && valueMin == 0){
           return;
         }
-        // $("#tableCustomer").removeClass('row_selected customer');        
-        // $("#tableCustomer tbody tr").removeClass('row_selected customer');        
-        // $("#tableCustomer tbody td").removeClass('row_selected customer');        
-        // $(event.target.parentNode).addClass('row_selected customer');
         event.srcElement.parentElement.classList.add("row_selected");
-        // if (objChart1) {
-        //   objChart1.destroy();
-        // }
         var title = getSelectedTdfkNm() + " " + getSelectedCityNm() 
           + "     "
           + "(" + rowindex + ") " 
@@ -460,7 +454,7 @@ function createTable(datalist){
             return;
           }
         }
-        var graphId = createGraphArea(rowindex);
+        var graphId = createGraphArea(datalist, rowindex, "divGraphRow1");
         createGraphTest(datalist, rowindex, graphId, title);
 
       });
@@ -512,9 +506,28 @@ function IsSameTR_NextRow(datalist, i){
 }
 
 
-function openHikakuModal(rowindex){
-  alert(rowindex)
+function openHikakuModal(datalist, rowindex){
+  // document.getElementById("modalExcelUpload").show();
+  //alert(datalist);
+  var myModal = new bootstrap.Modal(document.getElementById('modalGraphHikaku'), {
+    keyboard: false
+  });
+
+  var graphId = createGraphArea(datalist, rowindex, "divGraphHikakuArea");
+  createGraphTest(datalist, rowindex, graphId, "abc");
+  
+  myModal.show();
+  //alert(rowindex)
 }
+
+
+//ファイル取り込みモーダルを起動
+//ファイルインプットタグを初期化
+//
+document.getElementById('modalGraphHikaku').addEventListener('show.bs.modal', function () {
+  alert(1);
+});
+
 
 function destroyGraph(key, rowindex){
   var id = key.split("_")[0]
@@ -533,7 +546,7 @@ function destroyGraph(key, rowindex){
   }
 }
 
-function createGraphArea(rowindex){
+function createGraphArea(datalist, rowindex, areaId){
   //divGraphGroup
   let graphs = document.querySelectorAll("[id^='divGraphArea']"); //' #divGraphArea *');
   var max = 1;
@@ -572,7 +585,7 @@ function createGraphArea(rowindex){
   spanBadge2.classList.add("badge-clickable"); //
   spanBadge2.id = "divGraphArea" + (max+1) + "_shosaiBtn";
   spanBadge2.addEventListener('click', function() {
-    openHikakuModal(rowindex);
+    openHikakuModal(datalist, rowindex);
   });
 
   
@@ -581,7 +594,7 @@ function createGraphArea(rowindex){
   var tmpDivArea = document.createElement("div");
   tmpDivArea.classList.add("col-4");
   tmpDivArea.id = "divGraphArea" + (max+1);
-  document.getElementById("divGraphRow1").appendChild(tmpDivArea);
+  document.getElementById(areaId).appendChild(tmpDivArea);
   tmpDivArea.appendChild(spanBadge1);
   tmpDivArea.appendChild(sep);
   tmpDivArea.appendChild(spanBadge2);
@@ -595,6 +608,14 @@ function createGraphArea(rowindex){
 
 function getSelectedTdfkNm(){
   var obj1 = document.getElementById('selTdfk');
+  var idx1 = obj1.selectedIndex;
+  var txt1  = obj1.options[idx1].text;
+  return txt1;
+}
+
+
+function getSelectedFilePatternNm(){
+  var obj1 = document.getElementById('selFilePattern');
   var idx1 = obj1.selectedIndex;
   var txt1  = obj1.options[idx1].text;
   return txt1;
@@ -659,6 +680,18 @@ const c_tdfk = {
 };
 
 
+function createFilePatternSelectOption(){
+  var select = document.getElementById("selFilePattern");
+  for(let i=1; i<=Object.keys(c_filePattern).length; i++){
+    var option = document.createElement("option");
+    option.value = i;
+    option.text = c_filePattern[i];
+    select.appendChild(option);
+  }
+}
+const c_filePattern = {
+  1:"財政状況資料_都道府県", 2:"ファイル２"
+}
 
 
 

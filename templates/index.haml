@@ -35,14 +35,23 @@
           地方財政に関する統計ファイルを収集してデータを取り込みます。
       %div.modal-body
         %div.row
-          %div.col-6
+          %div.col-4
+            %select#selFilePattern.form-select.form-select-sm(aria-label=".form-select-sm example")
+              %option(selected value="0")
+                （資料の種類を選択）
+          %div.col-4
             %button.btn.btn-sm.btn-primary#btnExecuteCollect(type="button")
               収集実行
-          %div.col-6
+          %div.col-4
             %button.btn.btn-sm.btn-primary.float-end#btnExecuteImport(type="button")
               取込実行
-        %div.container-fluid.table-responsive#tableFileCollectDiv
+        %div.row
+          &nbsp;
+        %div.row
+          %div.container-fluid.table-responsive#tableFileCollectDiv
 
+        %div.row
+          &nbsp;
 
         %div.input-group
           %input.form-control#inputGroupFile(type="file")
@@ -52,6 +61,21 @@
           キャンセル
         %button.btn.btn-primary#btnFileImport(type="button")
           実行
+
+
+<!-- Modal -->
+%div.modal.fade#modalGraphHikaku(data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="modalGraphHikakuLabel" aria-hidden="true")
+  %div.modal-dialog.modal-dialog-centered.modal-dialog-scrollable.modal-xl
+    %div.modal-content
+      %div.modal-header
+        %display-6.modal-title#modalGraphHikakuLabel
+          aaaaaa
+      %div.modal-body
+        %div.row#divGraphHikakuArea
+
+      %div.modal-footer
+        %button.btn.btn-secondary(type="button" data-bs-dismiss="modal")
+          閉じる
 
 
 %div#loading

@@ -451,8 +451,12 @@ def insertJotai(document_name, chosa_jiten, dantai_cd, dantai_nm, file_url, jota
   return "1"
 # 
 
-@app.route('/executeFileCollect',methods=["GET"])
-def executeFileCollect():
+
+# @app.route('/getCityListByTdfkCd/<tdfkCd>')
+# def getCityListByTdfkCd(tdfkCd):
+
+@app.route('/executeFileCollect/<filePattern>',methods=["GET"])
+def executeFileCollect(filePattern):
   link_list =[]
   for nen in ["h22","h23","h24","h25","h26","h27","h28","h29","h30", "r01"]:
     res = requests.get("https://www.soumu.go.jp/iken/zaisei/jyoukyou_shiryou/" + nen + "/index.html")
@@ -464,7 +468,7 @@ def executeFileCollect():
       if href.endswith('xlsx') or href.endswith('xls'):
         tdfk = tdfkCodeByName(text)
         if tdfk != "":
-          link_list.append({"document":"財政状況資料_都道府県", 
+          link_list.append({"document":filePattern, 
                             "year":nen, 
                             "dantai":tdfk, 
                             "text":text, 

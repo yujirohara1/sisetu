@@ -220,3 +220,12 @@ table.dataTable thead tr {
 .badge-clickable {
     cursor: pointer;   
 }
+
+.loading-ss {
+    background-image: url(../../../static/image/loading_ss.gif) !important;
+    background-repeat: no-repeat;
+    z-index: 9999;
+    text-align: center;
+    background-size: contain;
+    background-position-y: center;
+}
